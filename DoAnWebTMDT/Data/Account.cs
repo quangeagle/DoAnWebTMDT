@@ -25,7 +25,7 @@ public partial class Account
 
     public DateTime? CreatedAt { get; set; }
 
-    public string OTP { get; set; }
+    public string? OTP { get; set; }
 
     public DateTime? OTP_Expiry { get; set; }
 
