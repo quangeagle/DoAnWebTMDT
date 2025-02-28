@@ -1,0 +1,197 @@
+﻿@model IEnumerable<DoAnWebTMDT.Data.Product>
+
+@{
+    ViewData["Title"] = "Danh sách sản phẩm";
+    Layout = "_LayoutUser";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+       
+        <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar">
+            <div class="card shadow-sm p-3">
+                <h5 class="font-weight-bold">🔍 Tìm kiếm</h5>
+                <input type="text" class="form-control mb-3" id="searchInput" placeholder="Nhập tên sản phẩm...">
+
+                <h5 class="font-weight-bold">📂 Danh mục</h5>
+                <select class="form-control mb-3" id="categoryFilter">
+                    <option value="">Tất cả</option>
+                    <option value="Áo">Áo</option>
+                    <option value="Quần">Quần</option>
+                    <option value="Giày">Giày</option>
+                    <option value="Phụ kiện">Phụ kiện</option>
+                </select>
+
+                <h5 class="font-weight-bold">📏 Kích cỡ</h5>
+                <select class="form-control mb-3" id="sizeFilter">
+                    <option value="">Tất cả</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                </select>
+
+                <h5 class="font-weight-bold">🎨 Màu sắc</h5>
+                <select class="form-control mb-3" id="colorFilter">
+                    <option value="">Tất cả</option>
+                    <option value="Đen">Đen</option>
+                    <option value="Trắng">Trắng</option>
+                    <option value="Xanh">Xanh</option>
+                    <option value="Đỏ">Đỏ</option>
+                </select>
+
+                <h5 class="font-weight-bold">🚻 Giới tính</h5>
+                <select class="form-control mb-3" id="genderFilter">
+                    <option value="">Tất cả</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Unisex">Unisex</option>
+                </select>
+
+                <h5 class="font-weight-bold">💰 Khoảng giá</h5>
+                <input type="range" class="form-control-range" id="priceRange" min="0" max="5000000" step="100000">
+                <p>Giá tối đa: <span id="priceLabel">5,000,000 đ</span></p>
+
+                <h5 class="font-weight-bold">🔄 Sắp xếp</h5>
+                <select class="form-control mb-3" id="sortFilter">
+                    <option value="default">Mặc định</option>
+                    <option value="priceAsc">Giá tăng dần</option>
+                    <option value="priceDesc">Giá giảm dần</option>
+                </select>
+
+                <!-- 🔹 Nút lọc sản phẩm -->
+                <button class="btn btn-primary btn-block mt-3" onclick="filterProducts()">🔎 Lọc sản phẩm</button>
+            </div>
+        </aside>
+
+        <!-- 🔹 Danh sách sản phẩm -->
+        <main class="col-lg-9 col-md-8">
+            <h1 class="text-center text-2xl font-bold my-4">Danh sách sản phẩm</h1>
+            <div class="row" id="productList">
+                @foreach (var item in Model)
+                {
+                    <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-4 product-item" data-name="@item.Name" data-category="@item.Category?.Name" data-price="@item.NewPrice">
+                        <div class="card shadow-sm product-card" onclick="redirectToDetail(event, @item.ProductId)">
+                            <img src="@item.MediaPath" class="card-img-top" alt="@item.Name" style="height: 200px; object-fit: cover;">
+                            <div class="card-body text-center">
+                                <h5 class="card-title font-weight-bold">@item.Name</h5>
+                                <p class="card-text text-danger font-weight-bold">Giá: @item.NewPrice đ</p>
+                                <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); addToWishlist(@item.ProductId)">❤️ Yêu thích</button>
+                                <button class="btn btn-success btn-block mt-2" onclick="event.stopPropagation(); addToCart(@item.ProductId, this)">🛒 Thêm vào giỏ</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+    function redirectToDetail(event, productId) {
+        if (event.target.tagName === "BUTTON") return;
+        window.location.href = "/Products/CustomerDetails/" + productId;
+    }
+
+    function addToCart(productId, button) {
+        event.stopPropagation();
+        let originalText = button.innerHTML;
+        button.innerHTML = "⏳ Đang thêm...";
+        button.disabled = true;
+
+        fetch('/GioHangs/AddToCart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'productId=' + encodeURIComponent(productId) + '&quantity=1'
+        })
+        .then(response => response.json())
+        .then(data => { alert(data.message); })
+        .catch(error => { console.error('Lỗi:', error); alert("Có lỗi xảy ra, vui lòng thử lại."); })
+        .finally(() => { button.innerHTML = originalText; button.disabled = false; });
+    }
+
+    function addToWishlist(productId) {
+        event.stopPropagation();
+        alert("Đã thêm sản phẩm vào danh sách yêu thích!");
+    }
+
+    function filterProducts() {
+        let searchValue = document.getElementById("searchInput").value.toLowerCase();
+        let categoryValue = document.getElementById("categoryFilter").value;
+        let priceValue = parseInt(document.getElementById("priceRange").value);
+        let sortValue = document.getElementById("sortFilter").value;
+
+        let products = document.querySelectorAll(".product-item");
+
+        products.forEach(product => {
+            let name = product.getAttribute("data-name").toLowerCase();
+            let category = product.getAttribute("data-category") || "";
+            let price = parseInt(product.getAttribute("data-price"));
+
+            let match = (!searchValue || name.includes(searchValue)) &&
+                        (!categoryValue || category === categoryValue) &&
+                        (!priceValue || price <= priceValue);
+
+            product.style.display = match ? "block" : "none";
+        });
+
+        if (sortValue !== "default") {
+            let sortedProducts = [...products].sort((a, b) => {
+                let priceA = parseInt(a.getAttribute("data-price"));
+                let priceB = parseInt(b.getAttribute("data-price"));
+                return sortValue === "priceAsc" ? priceA - priceB : priceB - priceA;
+            });
+
+            let productList = document.getElementById("productList");
+            sortedProducts.forEach(product => productList.appendChild(product));
+        }
+    }
+
+    document.getElementById("priceRange").addEventListener("input", function() {
+        document.getElementById("priceLabel").textContent = new Intl.NumberFormat('vi-VN').format(this.value) + " đ";
+    });
+</script>
+
+<style>
+    .container-fluid {
+        max-width: 95vw;
+    }
+
+    /* 🔹 Sidebar full height */
+    .sticky-sidebar {
+        position: sticky;
+        top: 20px;
+        height: 100vh;
+        overflow-y: auto;
+    }
+
+    .card {
+        border-radius: 10px;
+        height: 100%;
+    }
+
+    /* 🔹 Product grid */
+    .product-card {
+        cursor: pointer;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .product-card:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .product-card img {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    .btn {
+        border-radius: 8px;
+    }
+
+    /* 🔹 Responsive */
+    
+</style>

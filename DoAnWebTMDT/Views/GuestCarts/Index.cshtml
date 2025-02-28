@@ -1,0 +1,51 @@
+﻿@model IEnumerable<DoAnWebTMDT.Data.GuestCart>
+
+
+<h2>Giỏ hàng của bạn</h2>
+
+@if (!Model.Any()) // Dùng LINQ để kiểm tra danh sách rỗng
+
+{
+    <p>Giỏ hàng trống!</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Sản phẩm</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Tổng</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Product.Name</td>
+                    <td>@item.Product.NewPrice VND</td>
+                    <td>
+                        <form asp-action="Update" method="post">
+                            <input type="hidden" name="productId" value="@item.ProductId" />
+                            <input type="number" name="quantity" value="@item.Quantity" min="1" />
+                            <button type="submit">Cập nhật</button>
+                        </form>
+                    </td>
+                    <td>@(item.Quantity * item.Product.NewPrice) VND</td>
+                    <td>
+                        <form asp-action="Delete" method="post">
+                            <input type="hidden" name="productId" value="@item.ProductId" />
+                            <button type="submit">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <form asp-action="Clear" method="post">
+        <button type="submit">Xóa toàn bộ giỏ hàng</button>
+    </form>
+}

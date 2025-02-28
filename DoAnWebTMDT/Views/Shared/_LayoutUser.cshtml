@@ -1,0 +1,175 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Cửa hàng</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/user.css" asp-append-version="true" />
+    <style>
+        /* 🔹 Navbar cố định khi cuộn */
+        /* 🔹 Navbar mặc định */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(45deg, #007bff, #6610f2); /* Màu nền ban đầu */
+            transition: background 0.3s ease-in-out;
+            z-index: 1000;
+        }
+
+            /* 🔹 Khi cuộn xuống */
+            .navbar.scrolled {
+                background: rgba(255, 255, 255, 0.85) !important;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+                /* 🔹 Đổi màu chữ khi cuộn */
+                .navbar.scrolled .nav-link {
+                    color: black !important;
+                }
+
+        /* 🔹 Định dạng menu */
+        .navbar-nav {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* 🔹 Link Navbar */
+        .nav-link {
+            color: white !important;
+            font-size: 18px;
+            transition: 0.3s;
+            padding: 8px 15px;
+            border-radius: 5px;
+        }
+
+        /* 🔹 Khi cuộn xuống đổi màu chữ */
+      
+
+        /* 🔹 Ô tìm kiếm ở giữa */
+        .search-box {
+            position: relative;
+            flex-grow: 1;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 50px 10px 15px;
+            border-radius: 25px;
+            border: none;
+            font-size: 16px;
+        }
+
+        .search-box button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #007bff;
+        }
+
+        /* 🔹 Cụm bên trái */
+        .left-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-right: auto;
+        }
+
+        /* 🔹 Cụm bên phải */
+        .right-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: auto;
+        }
+
+        /* 🔹 Nút */
+        .btn-custom {
+            border-radius: 25px;
+            padding: 8px 15px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* 🔹 Responsive */
+     
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container-fluid">
+                <!-- 🔹 Cụm bên trái: Trang chủ | Sản phẩm | Giỏ hàng | Yêu thích -->
+                <div class="left-group">
+                    <a class="nav-link" asp-controller="Categories" asp-action="TrangChu">🌏 Trang chủ</a>
+                    <a class="nav-link" asp-controller="Products" asp-action="CustomerIndex">📦 Sản phẩm</a>
+                    <a class="nav-link" asp-controller="GioHangs" asp-action="GioHangCus">🛒 Giỏ hàng</a>
+                    <a class="nav-link" asp-controller="Wishlist" asp-action="Index">❤️ Yêu thích</a>
+                </div>
+
+                <!-- 🔹 Ô tìm kiếm ở giữa -->
+                <form class="search-box" asp-controller="Products" asp-action="Search" method="get">
+                    <input type="text" name="query" placeholder="🔍 Tìm sản phẩm..." aria-label="Search">
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                </form>
+
+                <!-- 🔹 Cụm bên phải: Đăng nhập / Đăng ký -->
+                <div class="right-group">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <span class="nav-link">👤 @User.Identity.Name</span>
+                        <a class="nav-link btn btn-danger text-white btn-custom" asp-controller="Accounts" asp-action="Logout">🚪 Đăng xuất</a>
+                    }
+                    else
+                    {
+                        <a class="nav-link btn btn-primary text-white btn-custom" asp-controller="Accounts" asp-action="Login">🔑 Đăng nhập</a>
+                        <a class="nav-link btn btn-success text-white btn-custom" asp-controller="Accounts" asp-action="Register">📝 Đăng ký</a>
+                    }
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid" style="margin-top: 80px;">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- ✅ JavaScript để đổi màu khi cuộn -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            window.addEventListener("scroll", function () {
+                let navbar = document.querySelector(".navbar");
+                if (window.scrollY > 50) {
+                    navbar.classList.add("scrolled");
+                } else {
+                    navbar.classList.remove("scrolled");
+                }
+            });
+        });
+
+    </script>
+
+    <!-- ✅ Bootstrap + FontAwesome -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ✅ Hỗ trợ thêm script riêng từng trang -->
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

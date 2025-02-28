@@ -1,0 +1,117 @@
+﻿@model IEnumerable<DoAnWebTMDT.Data.GioHang>
+
+@{
+    ViewData["Title"] = "Giỏ hàng";
+    decimal tongTien = Model.Sum(item => item.Quantity * item.Product.NewPrice.GetValueOrDefault());
+}
+
+@{
+    Layout = "_LayoutUser";
+}
+
+<h2 class="text-center my-4">🛒 Giỏ hàng của bạn</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning text-center">Giỏ hàng của bạn đang trống! 🛍️</div>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Hình ảnh</th>
+                <th>Sản phẩm</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Tổng</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        <img src="@item.Product.MediaPath" alt="Hình ảnh sản phẩm" width="80" height="80" class="rounded">
+                    </td>
+                    <td>@item.Product.Name</td>
+                    <td>@item.Product.NewPrice đ</td>
+                    <td>
+                        <div class="input-group">
+                            <button type="button" class="btn btn-outline-secondary btn-sm change-qty" data-id="@item.CartId" data-action="decrease">-</button>
+                            <input type="text" value="@item.Quantity" class="form-control text-center qty-input" data-id="@item.CartId">
+                            <button type="button" class="btn btn-outline-secondary btn-sm change-qty" data-id="@item.CartId" data-action="increase">+</button>
+                        </div>
+                    </td>
+                    <td class="total-price" data-id="@item.CartId">@((item.Quantity * item.Product.NewPrice)) đ</td>
+                    <td class="action-total" data-id="@item.CartId">@((item.Quantity * item.Product.NewPrice)) đ</td>
+                    <td>
+                        <a asp-action="Delete" asp-route-id="@item.CartId" class="btn btn-sm btn-danger">Xóa</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="text-end">
+        <h4 class="fw-bold">🛍️ Tổng thanh toán: <span id="total-cart-price">@tongTien.ToString("N0") đ</span></h4>
+        <a asp-action="Checkout" class="btn btn-success btn-lg">Thanh toán</a>
+    </div>
+}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Khi bấm nút tăng/giảm
+    document.querySelectorAll(".change-qty").forEach(button => {
+        button.addEventListener("click", function () {
+            let cartId = this.getAttribute("data-id");
+            let action = this.getAttribute("data-action");
+            let input = document.querySelector(`.qty-input[data-id="${cartId}"]`);
+            let quantity = parseInt(input.value);
+
+            if (action === "increase") quantity++;
+            else if (action === "decrease" && quantity > 1) quantity--;
+
+            updateQuantity(cartId, quantity);
+        });
+    });
+
+    // Khi nhập số lượng trực tiếp
+    document.querySelectorAll(".qty-input").forEach(input => {
+        input.addEventListener("change", function () {
+            let cartId = this.getAttribute("data-id");
+            let quantity = parseInt(this.value);
+            if (isNaN(quantity) || quantity < 1) quantity = 1;
+            updateQuantity(cartId, quantity);
+        });
+    });
+
+    function updateQuantity(cartId, quantity) {
+        fetch(`/GioHangs/UpdateQuantity/${cartId}?quantity=${quantity}`, { 
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Cập nhật số lượng mới trong input
+                document.querySelector(`.qty-input[data-id="${cartId}"]`).value = quantity;
+
+                // Cập nhật tổng tiền của từng sản phẩm
+                document.querySelector(`.total-price[data-id="${cartId}"]`).innerText = 
+                    data.totalItemPrice.toLocaleString() + " đ";
+                document.querySelector(`.action-total[data-id="${cartId}"]`).innerText = 
+                    data.totalItemPrice.toLocaleString() + " đ";
+
+                // Cập nhật tổng tiền của toàn bộ giỏ hàng
+                document.querySelector("#total-cart-price").innerText = 
+                    data.totalCartPrice.toLocaleString() + " đ";
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error("Lỗi khi cập nhật:", error));
+    }
+});
+</script>

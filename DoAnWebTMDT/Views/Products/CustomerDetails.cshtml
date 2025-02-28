@@ -1,0 +1,172 @@
+﻿@model DoAnWebTMDT.Data.Product
+
+@{
+    ViewData["Title"] = "Chi tiết sản phẩm";
+    Layout = "_LayoutUser";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Hình ảnh hoặc Video -->
+        <div class="col-md-6">
+            <div class="product-media">
+                @if (!string.IsNullOrEmpty(Model.MediaPath))
+                {
+                    if (Model.MediaPath.EndsWith(".mp4"))
+                    {
+                        <video autoplay loop muted class="img-fluid">
+                            <source src="@Model.MediaPath" type="video/mp4">
+                        </video>
+                    }
+                    else
+                    {
+                        <img src="@Model.MediaPath" alt="@Model.Name" class="img-fluid rounded">
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Thông tin sản phẩm -->
+        <div class="col-md-6">
+            <h2 class="product-title">@Model.Name</h2>
+            <p class="text-muted">@Model.Description</p>
+
+            <div class="product-pricing">
+                <span class="old-price">@Model.OldPrice VNĐ</span>
+                <span class="new-price">@Model.NewPrice VNĐ</span>
+                <span class="discount">(-@Model.DiscountPercent%)</span>
+            </div>
+
+            <div class="stock-info">
+                <strong>Tồn kho:</strong> @Model.Stock sản phẩm
+            </div>
+
+            <!-- Kích cỡ sản phẩm -->
+            <div class="size-selection mt-3">
+                <label for="size">Chọn kích cỡ:</label>
+                <select id="size" class="form-control">
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                </select>
+            </div>
+
+            <div class="quantity-control mt-3">
+                <label for="quantity">Số lượng:</label>
+                <input type="number" id="quantity" class="form-control" value="1" min="1" max="@Model.Stock">
+            </div>
+
+            <button class="btn btn-primary btn-lg mt-4 w-100">
+                <i class="fas fa-shopping-cart"></i> Thêm vào giỏ hàng
+            </button>
+        </div>
+    </div>
+
+    <!-- Đánh giá sản phẩm -->
+    <div class="reviews mt-5">
+        <h3>Đánh giá từ khách hàng</h3>
+        <div class="review-item">
+            <strong>Nguyễn Văn A</strong>
+            <p>⭐⭐⭐⭐⭐</p>
+            <p>"Sản phẩm rất đẹp, chất lượng tốt!"</p>
+        </div>
+        <div class="review-item">
+            <strong>Trần Thị B</strong>
+            <p>⭐⭐⭐⭐</p>
+            <p>"Hài lòng với sản phẩm, giao hàng nhanh."</p>
+        </div>
+    </div>
+
+    <!-- Sản phẩm liên quan -->
+    <div class="related-products mt-5">
+        <h3>Sản phẩm liên quan</h3>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card product-card">
+                    <img src="/images/sample.jpg" class="card-img-top" alt="Sample Product">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Sản phẩm A</h5>
+                        <p class="card-text text-danger font-weight-bold">300.000 VNĐ</p>
+                        <button class="btn btn-success btn-sm">🛒 Mua ngay</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card product-card">
+                    <img src="/images/sample.jpg" class="card-img-top" alt="Sample Product">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Sản phẩm B</h5>
+                        <p class="card-text text-danger font-weight-bold">450.000 VNĐ</p>
+                        <button class="btn btn-success btn-sm">🛒 Mua ngay</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .product-media {
+        width: 100%;
+        max-height: 500px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 10px;
+    }
+
+    .product-title {
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .product-pricing {
+        font-size: 22px;
+        margin-top: 10px;
+    }
+
+    .old-price {
+        text-decoration: line-through;
+        color: #888;
+        margin-right: 10px;
+    }
+
+    .new-price {
+        font-size: 24px;
+        font-weight: bold;
+        color: #dc3545;
+    }
+
+    .discount {
+        background: #28a745;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+
+    .stock-info {
+        font-size: 18px;
+        margin-top: 15px;
+    }
+
+    .size-selection label {
+        font-weight: bold;
+    }
+
+    .review-item {
+        border-bottom: 1px solid #ddd;
+        padding: 10px 0;
+    }
+
+    .product-card {
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .product-card:hover {
+            transform: scale(1.05);
+        }
+</style>

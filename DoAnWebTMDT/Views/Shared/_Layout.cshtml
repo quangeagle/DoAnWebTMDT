@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin Panel</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/DoAnWebTMDT.styles.css" asp-append-version="true" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="bg-dark text-white sidebar">
+            <h4 class="text-center py-3">Admin Panel</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link text-white" asp-controller="Admin" asp-action="Dashboard">🏠 Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white dropdown-toggle" href="#" id="productDropdown" data-bs-toggle="collapse" data-bs-target="#productMenu">
+                        📦 Quản lý sản phẩm
+                    </a>
+                    <ul class="collapse list-unstyled ps-3" id="productMenu">
+                        <li><a class="nav-link text-white" asp-controller="Products" asp-action="Create">➕ Thêm sản phẩm</a></li>
+                        <li><a class="nav-link text-white" asp-controller="Products" asp-action="Index">📋 Danh sách sản phẩm</a></li>
+                        <li><a class="nav-link text-white" asp-controller="Products" asp-action="Manage">✏️ Sửa/Xóa sản phẩm</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" asp-controller="Categories" asp-action="Index">📂 Quản lý danh mục</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" asp-controller="Orders" asp-action="Index">📑 Quản lý đơn hàng</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" asp-controller="Users" asp-action="Index">👥 Quản lý người dùng</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" asp-controller="Account" asp-action="Logout">🚪 Đăng xuất</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content p-4">
+            <main role="main">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <style>
+        /* Sidebar styles */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            padding-top: 20px;
+        }
+
+        /* Content styles */
+        .content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+        }
+
+        /* Dropdown menu */
+        .nav-link {
+            padding: 10px;
+            display: block;
+        }
+
+            .nav-link:hover {
+                background: #575757;
+                border-radius: 5px;
+            }
+    </style>
+</body>
+</html>

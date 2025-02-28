@@ -1,0 +1,46 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@model List<DoAnWebTMDT.Data.Product>
+
+<h2 class="text-center my-4">Danh Sách Sản Phẩm</h2>
+
+@if (Model == null || !Model.Any())
+{
+    <p class="text-center text-danger">Không có sản phẩm nào!</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var product in Model)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? product.MediaPath : product.ImageUrl)"
+                         class="card-img-top" alt="@product.Name"
+                         style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title">@product.Name</h5>
+                        <p class="card-text">@product.Description</p>
+                        <p class="text-danger">
+                            Giá:
+                            @if (product.NewPrice.HasValue)
+                            {
+                                <span>@product.NewPrice.Value.ToString("C")</span>
+                                <small class="text-muted"><del>@product.OldPrice.ToString("C")</del></small>
+                            }
+                            else
+                            {
+                                <span>@product.OldPrice.ToString("C")</span>
+                            }
+                        </p>
+                        <p class="text-success">Còn lại: @product.Stock sản phẩm</p>
+                        <a href="#" class="btn btn-primary">Mua ngay</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
