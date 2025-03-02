@@ -132,7 +132,9 @@ namespace DoAnWebTMDT.Controllers
             _context.GioHangs.RemoveRange(cartItems);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction("Index", "Orders");
+           /* return RedirectToAction("Index", "Orders");*/
+            return RedirectToAction("CreatePayment", "ZaloPay", new { orderId = order.OrderId, amount = order.TotalAmount });
+
         }
 
 
