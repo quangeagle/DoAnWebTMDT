@@ -69,7 +69,7 @@ namespace DoAnWebTMDT.Controllers
                 OTP = otp,
                 OTP_Expiry = otpExpiry,
                 Role = "User"
-            };
+            };  
             _context.Accounts.Add(account);
             await _context.SaveChangesAsync();
 

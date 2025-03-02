@@ -19,7 +19,11 @@ public partial class Order
 
     public DateTime? CreatedAt { get; set; }
 
+    public int? AddressId { get; set; }
+
     public virtual Account? Account { get; set; }
+
+    public virtual Address? Address { get; set; }
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 

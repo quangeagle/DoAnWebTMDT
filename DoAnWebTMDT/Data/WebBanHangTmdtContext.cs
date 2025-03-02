@@ -17,6 +17,8 @@ public partial class WebBanHangTmdtContext : DbContext
 
     public virtual DbSet<Account> Accounts { get; set; }
 
+    public virtual DbSet<Address> Addresses { get; set; }
+
     public virtual DbSet<Category> Categories { get; set; }
 
     public virtual DbSet<Chat> Chats { get; set; }
@@ -41,7 +43,7 @@ public partial class WebBanHangTmdtContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=DESKTOP-SL8KBFN\\SQLEXPRESS02;Initial Catalog=WebBanHangTMDT;Integrated Security=True;Trust Server Certificate=True");
+        => optionsBuilder.UseSqlServer("Server=DESKTOP-SL8KBFN\\SQLEXPRESS02;Database=WebBanHangTMDT;Trusted_Connection=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,6 +77,22 @@ public partial class WebBanHangTmdtContext : DbContext
                 .HasMaxLength(20)
                 .HasDefaultValue("User");
             entity.Property(e => e.Username).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<Address>(entity =>
+        {
+            entity.HasKey(e => e.AddressId).HasName("PK__Address__091C2AFBC1593D46");
+
+            entity.ToTable("Address");
+
+            entity.Property(e => e.AddressDetail).HasMaxLength(500);
+            entity.Property(e => e.FullName).HasMaxLength(255);
+            entity.Property(e => e.IsDefault).HasDefaultValue(false);
+            entity.Property(e => e.Phone).HasMaxLength(20);
+
+            entity.HasOne(d => d.Account).WithMany(p => p.Addresses)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK__Address__Account__2A164134");
         });
 
         modelBuilder.Entity<Category>(entity =>
@@ -222,6 +240,10 @@ public partial class WebBanHangTmdtContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.Orders)
                 .HasForeignKey(d => d.AccountId)
                 .HasConstraintName("FK__Orders__AccountI__6B24EA82");
+
+            entity.HasOne(d => d.Address).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.AddressId)
+                .HasConstraintName("FK__Orders__AddressI__2B0A656D");
         });
 
         modelBuilder.Entity<OrderDetail>(entity =>

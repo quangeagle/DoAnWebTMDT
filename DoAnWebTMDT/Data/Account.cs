@@ -29,6 +29,7 @@ public partial class Account
 
     public DateTime? OTP_Expiry { get; set; }
 
+    public virtual ICollection<Address> Addresses { get; set; } = new List<Address>();
 
     public virtual ICollection<Chat> ChatReceivers { get; set; } = new List<Chat>();
 

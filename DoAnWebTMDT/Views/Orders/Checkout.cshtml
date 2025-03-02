@@ -1,0 +1,62 @@
+﻿@model List<CheckoutViewModel>
+
+@{
+    ViewData["Title"] = "Thông Tin Giao Hàng";
+}
+
+<h2 class="text-xl font-bold mb-4">Thông Tin Giao Hàng</h2>
+
+@if (Model != null && Model.Any())
+{
+    <table class="w-full border-collapse border border-gray-300 mb-4">
+        <thead>
+            <tr class="bg-gray-200">
+                <th class="border border-gray-300 p-2">Hình ảnh</th>
+                <th class="border border-gray-300 p-2">Tên sản phẩm</th>
+                <th class="border border-gray-300 p-2">Số lượng</th>
+                <th class="border border-gray-300 p-2">Giá</th>
+                <th class="border border-gray-300 p-2">Tổng</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td class="border border-gray-300 p-2">
+                        <img src="@item.ImageUrl" alt="@item.ProductName" class="w-16 h-16 object-cover" />
+                    </td>
+                    <td class="border border-gray-300 p-2">@item.ProductName</td>
+                    <td class="border border-gray-300 p-2">@item.Quantity</td>
+                    <td class="border border-gray-300 p-2">@item.Price.ToString("N0") đ</td>
+                    <td class="border border-gray-300 p-2">@((item.Quantity * item.Price).ToString("N0")) đ</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p class="text-right text-lg font-semibold">
+        Tổng tiền: @Model.Sum(d => d.Quantity * d.Price).ToString("N0") đ
+    </p>
+
+    <h3 class="text-lg font-bold mt-4">Nhập Địa Chỉ Giao Hàng</h3>
+
+    <form asp-action="ConfirmOrder" method="post" class="mt-4">
+        <div class="mb-2">
+            <label for="FullName" class="block font-medium">Họ và Tên</label>
+            <input type="text" id="FullName" name="FullName" required class="w-full border border-gray-300 p-2" />
+        </div>
+        <div class="mb-2">
+            <label for="PhoneNumber" class="block font-medium">Số Điện Thoại</label>
+            <input type="text" id="PhoneNumber" name="PhoneNumber" required class="w-full border border-gray-300 p-2" />
+        </div>
+        <div class="mb-2">
+            <label for="Address" class="block font-medium">Địa Chỉ</label>
+            <textarea id="Address" name="addressDetail" required class="w-full border border-gray-300 p-2"></textarea>
+        </div>
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Xác Nhận Đơn Hàng</button>
+    </form>
+}
+else
+{
+    <p class="text-center text-gray-500">Không có sản phẩm nào trong giỏ hàng.</p>
+}
