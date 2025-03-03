@@ -1,11 +1,8 @@
-﻿@model IEnumerable<DoAnWebTMDT.Data.GioHang>
+﻿@model IEnumerable<DoAnWebTMDT.Models.CartItemViewModel>
 
 @{
     ViewData["Title"] = "Giỏ hàng";
-    decimal tongTien = Model.Sum(item => item.Quantity * item.Product.NewPrice.GetValueOrDefault());
-}
-
-@{
+    decimal tongTien = Model.Sum(item => item.Quantity * item.NewPrice);
     Layout = "_LayoutUser";
 }
 
@@ -33,22 +30,29 @@ else
             {
                 <tr>
                     <td>
-                        <img src="@item.Product.MediaPath" alt="Hình ảnh sản phẩm" width="80" height="80" class="rounded">
+                        <img src="@item.ProductImage" alt="Hình ảnh sản phẩm" width="80" height="80" class="rounded">
                     </td>
-                    <td>@item.Product.Name</td>
-                    <td>@item.Product.NewPrice.GetValueOrDefault() đ</td>
+                    <td>@item.ProductName</td>
+                    <td>@item.NewPrice.ToString("N0") đ</td>
                     <td>
                         <div class="input-group">
-                            <button type="button" class="btn btn-outline-secondary btn-sm change-qty" data-id="@item.CartId" data-action="decrease">-</button>
-                            <input type="text" value="@item.Quantity" class="form-control text-center qty-input" data-id="@item.CartId">
-                            <button type="button" class="btn btn-outline-secondary btn-sm change-qty" data-id="@item.CartId" data-action="increase">+</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm change-qty"
+                                    data-id="@item.ProductId" data-action="decrease">
+                                -
+                            </button>
+                            <input type="text" value="@item.Quantity" class="form-control text-center qty-input"
+                                   data-id="@item.ProductId">
+                            <button type="button" class="btn btn-outline-secondary btn-sm change-qty"
+                                    data-id="@item.ProductId" data-action="increase">
+                                +
+                            </button>
                         </div>
                     </td>
-                    <td class="total-price" data-id="@item.CartId">@((item.Quantity * item.Product.NewPrice.GetValueOrDefault())) đ</td>
+                    <td class="total-price" data-id="@item.ProductId">@((item.Quantity * item.NewPrice).ToString("N0")) đ</td>
                     <td>
-                        <a asp-action="Delete" asp-route-id="@item.CartId" class="btn btn-sm btn-danger"
-                           onclick="return confirm('Bạn có chắc chắn muốn xoá sản phẩm này không?')">
-                           Xóa
+                        <a href="javascript:void(0);" class="btn btn-sm btn-danger delete-item"
+                           data-id="@item.ProductId">
+                            Xóa
                         </a>
                     </td>
                 </tr>
@@ -70,44 +74,67 @@ else
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll(".change-qty").forEach(button => {
             button.addEventListener("click", function () {
-                let cartId = this.getAttribute("data-id");
+                let productId = this.getAttribute("data-id");
                 let action = this.getAttribute("data-action");
-                let input = document.querySelector(`.qty-input[data-id="${cartId}"]`);
+                let input = document.querySelector(`.qty-input[data-id="${productId}"]`);
                 let quantity = parseInt(input.value);
 
                 if (action === "increase") quantity++;
                 else if (action === "decrease" && quantity > 1) quantity--;
 
-                updateQuantity(cartId, quantity);
+                updateQuantity(productId, quantity);
             });
         });
 
         document.querySelectorAll(".qty-input").forEach(input => {
             input.addEventListener("change", function () {
-                let cartId = this.getAttribute("data-id");
+                let productId = this.getAttribute("data-id");
                 let quantity = parseInt(this.value);
                 if (isNaN(quantity) || quantity < 1) quantity = 1;
-                updateQuantity(cartId, quantity);
+                updateQuantity(productId, quantity);
             });
         });
 
-        function updateQuantity(cartId, quantity) {
-            fetch(`/GioHangs/UpdateQuantity/${cartId}?quantity=${quantity}`, { 
+        document.querySelectorAll(".delete-item").forEach(button => {
+            button.addEventListener("click", function () {
+                let productId = this.getAttribute("data-id");
+                deleteItem(productId);
+            });
+        });
+
+        function updateQuantity(productId, quantity) {
+            fetch(`/GioHangs/UpdateQuantity/${productId}?quantity=${quantity}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.totalItemPrice !== null) {
-                    document.querySelector(`.total-price[data-id="${cartId}"]`).innerText = 
-                        data.totalItemPrice.toLocaleString() + " đ";
-                    document.querySelector("#total-cart-price").innerText = 
-                        data.totalCartPrice.toLocaleString() + " đ";
-                } else {
-                    alert(data.message);
-                }
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.querySelector(`.total-price[data-id="${productId}"]`).innerText =
+                            data.totalItemPrice.toLocaleString() + " đ";
+                        document.querySelector("#total-cart-price").innerText =
+                            data.totalCartPrice.toLocaleString() + " đ";
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error("Lỗi khi cập nhật:", error));
+        }
+
+        function deleteItem(productId) {
+            fetch(`/GioHangs/Delete/${productId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
             })
-            .catch(error => console.error("Lỗi khi cập nhật:", error));
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error("Lỗi khi xóa sản phẩm:", error));
         }
     });
 </script>

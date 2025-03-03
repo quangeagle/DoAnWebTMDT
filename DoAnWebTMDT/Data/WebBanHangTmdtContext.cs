@@ -230,7 +230,9 @@ public partial class WebBanHangTmdtContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.GuestAddress).HasMaxLength(500);
             entity.Property(e => e.GuestEmail).HasMaxLength(100);
+            entity.Property(e => e.GuestFullName).HasMaxLength(255);
             entity.Property(e => e.GuestPhone).HasMaxLength(15);
             entity.Property(e => e.OrderStatus)
                 .HasMaxLength(20)

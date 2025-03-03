@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using DoAnWebTMDT.Data;
 using DoAnWebTMDT.Models;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 
 namespace DoAnWebTMDT.Controllers
 {
@@ -38,10 +39,16 @@ namespace DoAnWebTMDT.Controllers
                 return Json(new { success = false, message = "Số lượng không hợp lệ!" });
             }
 
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null)
+            {
+                return Json(new { success = false, message = "Sản phẩm không tồn tại!" });
+            }
+
             int? userId = GetCurrentUserId();
             if (userId != null)
             {
-                // Người dùng đã đăng nhập → Thêm vào database
+                // 🟢 Người dùng đã đăng nhập → Thêm vào database
                 var cartItem = await _context.GioHangs
                     .FirstOrDefaultAsync(g => g.AccountId == userId && g.ProductId == productId);
 
@@ -64,8 +71,8 @@ namespace DoAnWebTMDT.Controllers
             }
             else
             {
-                // Khách vãng lai → Lưu vào Session
-                var guestCart = HttpContext.Session.GetObjectFromJson<List<GuestCart>>("GuestCart") ?? new List<GuestCart>();
+                // 🟠 Khách vãng lai → Lưu vào Session
+                var guestCart = HttpContext.Session.GetObjectFromJson<List<CartItemViewModel>>("GuestCart") ?? new List<CartItemViewModel>();
 
                 var existingItem = guestCart.FirstOrDefault(c => c.ProductId == productId);
                 if (existingItem != null)
@@ -74,11 +81,13 @@ namespace DoAnWebTMDT.Controllers
                 }
                 else
                 {
-                    guestCart.Add(new GuestCart
+                    guestCart.Add(new CartItemViewModel
                     {
                         ProductId = productId,
-                        Quantity = quantity,
-                        CreatedAt = DateTime.Now
+                        ProductName = product.Name,
+                        ProductImage = product.MediaPath,
+                        NewPrice = product.NewPrice ?? 0,
+                        Quantity = quantity
                     });
                 }
 
@@ -88,44 +97,77 @@ namespace DoAnWebTMDT.Controllers
             return Json(new { success = true, message = "Đã thêm vào giỏ hàng!" });
         }
 
+
         // Hiển thị giỏ hàng của tài khoản đăng nhập
         public IActionResult Index()
         {
-            int? userId = GetCurrentUserId();
-            Console.WriteLine($"🔍 Debug: AccountId được lấy từ Session = {userId}");
+            int? userId = GetCurrentUserId();  // Lấy ID nếu có đăng nhập
+            List<CartItemViewModel> cartItems = new List<CartItemViewModel>();
 
-            if (userId == null)
+            if (userId != null)
             {
-                return RedirectToAction("Login", "Accounts");
+                // 🛒 Lấy giỏ hàng từ database nếu người dùng đã đăng nhập
+                cartItems = _context.GioHangs
+                    .Where(g => g.AccountId == userId)
+                    .Include(g => g.Product)
+                    .Select(g => new CartItemViewModel
+                    {
+                        ProductId = g.ProductId,
+                        ProductName = g.Product.Name,
+                        ProductImage = g.Product.MediaPath,
+                        NewPrice = g.Product.NewPrice ?? 0,
+                        Quantity = g.Quantity
+                    })
+                    .ToList();
+            }
+            else
+            {
+                // 🛍️ Lấy giỏ hàng từ Session nếu là khách vãng lai
+                var sessionCart = HttpContext.Session.GetString("GuestCart");
+                if (!string.IsNullOrEmpty(sessionCart))
+                {
+                    cartItems = JsonConvert.DeserializeObject<List<CartItemViewModel>>(sessionCart);
+                }
             }
 
-            var gioHang = _context.GioHangs
-                .Where(g => g.AccountId == userId)
-                .Include(g => g.Product)
-                .ToList();
-
-            return View(gioHang);
+            return View(cartItems);  // Trả về danh sách giỏ hàng của cả khách vãng lai & đăng nhập
         }
+
+
         public IActionResult GioHangCus()
         {
-            int? userId = GetCurrentUserId();
+            int? userId = GetCurrentUserId(); // Lấy ID người dùng nếu có đăng nhập
+            List<CartItemViewModel> cartItems = new List<CartItemViewModel>();
 
-            // ✅ Kiểm tra nếu không có UserId, chuyển hướng đến trang đăng nhập
-            if (userId == null)
+            if (userId != null)
             {
-                return RedirectToAction("Login", "Accounts");
+                // 🛒 Lấy giỏ hàng từ database nếu người dùng đã đăng nhập
+                cartItems = _context.GioHangs
+                    .Where(g => g.AccountId == userId)
+                    .Include(g => g.Product)
+                    .Select(g => new CartItemViewModel
+                    {
+                        ProductId = g.ProductId,
+                        ProductName = g.Product.Name,
+                        ProductImage = g.Product.MediaPath,
+                        NewPrice = g.Product.NewPrice ?? 0,
+                        Quantity = g.Quantity
+                    })
+                    .ToList();
+            }
+            else
+            {
+                // 🛍️ Lấy giỏ hàng từ Session nếu là khách vãng lai
+                var sessionCart = HttpContext.Session.GetString("GuestCart");
+                if (!string.IsNullOrEmpty(sessionCart))
+                {
+                    cartItems = JsonConvert.DeserializeObject<List<CartItemViewModel>>(sessionCart);
+                }
             }
 
-            Console.WriteLine($"🔍 Debug: AccountId được lấy từ Session = {userId}");
-
-            // ✅ Lấy danh sách giỏ hàng theo userId
-            var gioHang = _context.GioHangs
-                .Where(g => g.AccountId == userId)
-                .Include(g => g.Product)
-                .ToList();
-
-            return View(gioHang);
+            return View(cartItems);  // Trả về view hiển thị giỏ hàng
         }
+
 
         [HttpPost]
         [HttpPost]
@@ -164,7 +206,7 @@ namespace DoAnWebTMDT.Controllers
 
 
         // Cập nhật số lượng sản phẩm trong giỏ hàng
-     
+
 
         // Xóa sản phẩm khỏi giỏ hàng
         [HttpPost]

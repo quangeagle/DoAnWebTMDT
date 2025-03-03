@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using DoAnWebTMDT.Data;
 using DoAnWebTMDT.Models;
@@ -22,31 +20,29 @@ namespace DoAnWebTMDT.Controllers
             _context = context;
         }
 
-        // Lấy giỏ hàng từ Session
-        private List<GuestCart> GetGuestCartFromSession()
+        // 🔹 Lấy giỏ hàng từ Session (Dùng List<CartItemViewModel> thay vì GuestCart)
+        private List<CartItemViewModel> GetGuestCartFromSession()
         {
             var sessionCart = HttpContext.Session.GetString(CartSessionKey);
-            return sessionCart != null ? JsonConvert.DeserializeObject<List<GuestCart>>(sessionCart) : new List<GuestCart>();
+            return !string.IsNullOrEmpty(sessionCart)
+                ? JsonConvert.DeserializeObject<List<CartItemViewModel>>(sessionCart)
+                : new List<CartItemViewModel>();
         }
 
-        // Lưu giỏ hàng vào Session
-        private void SaveGuestCartToSession(List<GuestCart> cart)
+        // 🔹 Lưu giỏ hàng vào Session
+        private void SaveGuestCartToSession(List<CartItemViewModel> cart)
         {
             HttpContext.Session.SetString(CartSessionKey, JsonConvert.SerializeObject(cart));
         }
 
-        // GET: GuestCarts (Hiển thị giỏ hàng)
+        // 🔹 Hiển thị giỏ hàng (Dùng chung View với giỏ hàng của user đăng nhập)
         public IActionResult Index()
         {
             var cart = GetGuestCartFromSession();
-            foreach (var item in cart)
-            {
-                item.Product = _context.Products.Find(item.ProductId);
-            }
-            return View(cart);
+            return View("~/Views/GioHangs/Index.cshtml", cart);
         }
 
-        // POST: GuestCarts/Create (Thêm sản phẩm vào giỏ hàng)
+        // 🔹 Thêm sản phẩm vào giỏ hàng
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(int productId, int quantity)
@@ -61,23 +57,26 @@ namespace DoAnWebTMDT.Controllers
             else
             {
                 var product = _context.Products.Find(productId);
-                if (product != null)
+                if (product == null)
                 {
-                    cart.Add(new GuestCart
-                    {
-                        ProductId = productId,
-                        Quantity = quantity,
-                        CreatedAt = DateTime.Now,
-                        Product = product
-                    });
+                    return NotFound(); // Nếu sản phẩm không tồn tại
                 }
+
+                cart.Add(new CartItemViewModel
+                {
+                    ProductId = productId,
+                    ProductName = product.Name,
+                    ProductImage = product.MediaPath,
+                    NewPrice = product.NewPrice ?? 0,
+                    Quantity = quantity
+                });
             }
 
             SaveGuestCartToSession(cart);
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: GuestCarts/Update (Cập nhật số lượng sản phẩm)
+        // 🔹 Cập nhật số lượng sản phẩm trong giỏ hàng
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Update(int productId, int quantity)
@@ -87,14 +86,14 @@ namespace DoAnWebTMDT.Controllers
 
             if (item != null)
             {
-                item.Quantity = quantity;
+                item.Quantity = Math.Max(1, quantity);
                 SaveGuestCartToSession(cart);
             }
 
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: GuestCarts/Delete (Xóa sản phẩm khỏi giỏ hàng)
+        // 🔹 Xóa sản phẩm khỏi giỏ hàng
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Delete(int productId)
@@ -106,7 +105,7 @@ namespace DoAnWebTMDT.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: GuestCarts/Clear (Xóa toàn bộ giỏ hàng)
+        // 🔹 Xóa toàn bộ giỏ hàng
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Clear()

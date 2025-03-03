@@ -2,9 +2,17 @@
 
 @{
     ViewData["Title"] = "Thông Tin Giao Hàng";
+    var isLoggedIn = Context.Session.GetInt32("AccountId") != null;
 }
 
 <h2 class="text-xl font-bold mb-4">Thông Tin Giao Hàng</h2>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger mb-4">
+        @TempData["ErrorMessage"]
+    </div>
+}
 
 @if (Model != null && Model.Any())
 {
@@ -27,32 +35,45 @@
                     </td>
                     <td class="border border-gray-300 p-2">@item.ProductName</td>
                     <td class="border border-gray-300 p-2">@item.Quantity</td>
-                    <td class="border border-gray-300 p-2">@item.Price.ToString("N0") đ</td>
-                    <td class="border border-gray-300 p-2">@((item.Quantity * item.Price).ToString("N0")) đ</td>
+                    <td class="border border-gray-300 p-2">@item.NewPrice.ToString("N0") đ</td>
+                    <td class="border border-gray-300 p-2">@((item.Quantity * item.NewPrice).ToString("N0")) đ</td>
                 </tr>
             }
         </tbody>
     </table>
 
     <p class="text-right text-lg font-semibold">
-        Tổng tiền: @Model.Sum(d => d.Quantity * d.Price).ToString("N0") đ
+        Tổng tiền: @Model.Sum(d => d.Quantity * d.NewPrice).ToString("N0") đ
     </p>
 
-    <h3 class="text-lg font-bold mt-4">Nhập Địa Chỉ Giao Hàng</h3>
+    <h3 class="text-lg font-bold mt-4">Nhập Thông Tin Giao Hàng</h3>
 
     <form asp-action="ConfirmOrder" method="post" class="mt-4">
-        <div class="mb-2">
-            <label for="FullName" class="block font-medium">Họ và Tên</label>
-            <input type="text" id="FullName" name="FullName" required class="w-full border border-gray-300 p-2" />
-        </div>
-        <div class="mb-2">
-            <label for="PhoneNumber" class="block font-medium">Số Điện Thoại</label>
-            <input type="text" id="PhoneNumber" name="PhoneNumber" required class="w-full border border-gray-300 p-2" />
-        </div>
+        @if (!isLoggedIn)
+        {
+            <div class="mb-2">
+                <label for="FullName" class="block font-medium">Họ và Tên</label>
+                <input type="text" id="FullName" name="FullName" required class="w-full border border-gray-300 p-2" />
+            </div>
+            <div class="mb-2">
+                <label for="PhoneNumber" class="block font-medium">Số Điện Thoại</label>
+                <input type="text" id="PhoneNumber" name="PhoneNumber" required class="w-full border border-gray-300 p-2" />
+            </div>
+            <div class="mb-2">
+                <label for="Email" class="block font-medium">Email</label>
+                <input type="email" id="Email" name="GuestEmail" required class="w-full border border-gray-300 p-2" />
+            </div>
+        }
+        else
+        {
+            <p class="text-green-600">✅ Bạn đã đăng nhập, thông tin tài khoản sẽ được sử dụng.</p>
+        }
+
         <div class="mb-2">
             <label for="Address" class="block font-medium">Địa Chỉ</label>
             <textarea id="Address" name="addressDetail" required class="w-full border border-gray-300 p-2"></textarea>
         </div>
+
         <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Xác Nhận Đơn Hàng</button>
     </form>
 }

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DoAnWebTMDT.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Net.Http;
@@ -9,20 +11,36 @@ using System.Threading.Tasks;
 public class ZaloPayController : Controller
 {
     private readonly HttpClient _httpClient;
+    private readonly WebBanHangTmdtContext _context; // Thêm DbContext
 
-    // Inject HttpClient qua constructor
-    public ZaloPayController(HttpClient httpClient)
+    public ZaloPayController(HttpClient httpClient, WebBanHangTmdtContext context)
     {
         _httpClient = httpClient;
+        _context = context; // Khởi tạo DbContext
     }
 
     [HttpGet]
+    [HttpGet]
     public async Task<IActionResult> CreatePayment(int orderId, decimal amount)
     {
-        var userId = HttpContext.Session.GetInt32("AccountId");
-        if (userId == null)
+        // Lấy thông tin đơn hàng
+        var order = await _context.Orders.FindAsync(orderId);
+        if (order == null)
         {
-            return RedirectToAction("Login", "Accounts");
+            return NotFound("Không tìm thấy đơn hàng.");
+        }
+
+        // Nếu đơn hàng có tài khoản, dùng AccountId, nếu không, dùng tên khách vãng lai
+        var appUser = order.AccountId.HasValue ? order.AccountId.ToString() : order.GuestFullName ?? "guest";
+
+        // Nếu amount = 0, kiểm tra lại TotalAmount của đơn hàng
+        if (amount <= 0)
+        {
+            amount = order.TotalAmount;
+            if (amount <= 0)
+            {
+                return BadRequest("Số tiền thanh toán không hợp lệ.");
+            }
         }
 
         var appTransId = $"{DateTime.Now:yyMMdd}_{orderId}"; // Mã giao dịch theo ngày
@@ -32,7 +50,7 @@ public class ZaloPayController : Controller
         {
             app_id = ZaloPayConfig.AppId,
             app_trans_id = appTransId,
-            app_user = userId.ToString(),
+            app_user = appUser,
             app_time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             amount = amountInt,
             item = "[]",
@@ -62,17 +80,17 @@ public class ZaloPayController : Controller
         var response = await _httpClient.PostAsync(ZaloPayConfig.APIUrl, content);
         var responseContent = await response.Content.ReadAsStringAsync();
 
-        // Chuyển đổi JSON phản hồi từ ZaloPay thành object
         var responseJson = JsonConvert.DeserializeObject<dynamic>(responseContent);
 
         return Content(JsonConvert.SerializeObject(new
         {
             message = "Giao dịch thành công",
-            qr_code = responseJson["qr_code"], // Link quét QR
-            order_url = responseJson["order_url"], // Link mở trong app ZaloPay
-            cashier_order_url = responseJson["cashier_order_url"] // Link hỗ trợ cả thẻ ngân hàng
+            qr_code = responseJson["qr_code"],
+            order_url = responseJson["order_url"],
+            cashier_order_url = responseJson["cashier_order_url"]
         }), "application/json");
     }
+
 
     private static string HmacSha256(string data, string key)
     {

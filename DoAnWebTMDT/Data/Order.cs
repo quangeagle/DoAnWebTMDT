@@ -21,6 +21,10 @@ public partial class Order
 
     public int? AddressId { get; set; }
 
+    public string? GuestFullName { get; set; }
+
+    public string? GuestAddress { get; set; }
+
     public virtual Account? Account { get; set; }
 
     public virtual Address? Address { get; set; }

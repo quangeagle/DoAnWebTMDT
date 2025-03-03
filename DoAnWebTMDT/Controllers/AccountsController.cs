@@ -69,7 +69,7 @@ namespace DoAnWebTMDT.Controllers
                 OTP = otp,
                 OTP_Expiry = otpExpiry,
                 Role = "User"
-            };  
+            };
             _context.Accounts.Add(account);
             await _context.SaveChangesAsync();
 
@@ -115,7 +115,7 @@ namespace DoAnWebTMDT.Controllers
         }
 
         // POST: Accounts/Login
-      
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
@@ -123,8 +123,8 @@ namespace DoAnWebTMDT.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-      
-          
+
+
             var user = _context.Accounts.FirstOrDefault(a => a.Email == model.Email);
             if (user == null || string.IsNullOrEmpty(user.Username) || string.IsNullOrEmpty(user.Role))
             {
@@ -224,7 +224,7 @@ namespace DoAnWebTMDT.Controllers
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
             var user = _context.Accounts.FirstOrDefault(a => a.Email == model.Email);
-            if (user == null || user.OTP != model.OTP || user.  OTP_Expiry < DateTime.Now)
+            if (user == null || user.OTP != model.OTP || user.OTP_Expiry < DateTime.Now)
             {
                 ModelState.AddModelError("OTP", "Mã OTP không hợp lệ hoặc đã hết hạn.");
                 return View();
@@ -332,7 +332,7 @@ namespace DoAnWebTMDT.Controllers
                 {
                     Subject = subject,
                     Body = body,
-                    IsBodyHtml = true    
+                    IsBodyHtml = true
                 })
                 {
                     await smtp.SendMailAsync(message);
