@@ -160,14 +160,14 @@ namespace DoAnWebTMDT.Controllers
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
 
-            // 🔥 Lưu AccountId vào Session (chuyển thành Int32 để tránh lỗi khi đọc)
+        
             HttpContext.Session.SetInt32("AccountId", user.AccountId);
 
-            // 🔥 Kiểm tra lại Session sau khi lưu
+       
             var sessionUserId = HttpContext.Session.GetInt32("AccountId");
             Console.WriteLine($"🔹 Debug: AccountId trong session = {sessionUserId}");
 
-            // ✅ Điều hướng theo Role
+    
             return user.Role == "Admin"
                 ? RedirectToAction("Dashboard", "Admin")
                 : RedirectToAction("CustomerIndex", "Products");

@@ -1,0 +1,191 @@
+﻿@{
+    ViewData["Title"] = "Chat với Admin";
+
+    Layout = "_LayoutUser";
+}
+<h2>Chat với Admin</h2>
+
+<div class="chat-container">
+    <div id="chat-box"></div>
+    <div class="chat-input">
+        <input type="hidden" id="senderId" value="@ViewBag.UserId">
+        <input type="hidden" id="receiverId" value="4">
+        <input type="text" id="message" placeholder="Nhập tin nhắn..." onkeypress="handleEnter(event)">
+        <button onclick="sendMessage()">Gửi</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    console.log("🔍 Bắt đầu kết nối SignalR...");
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    connection.start()
+        .then(() => console.log("✅ Kết nối SignalR thành công!"))
+        .catch(err => console.error("❌ Lỗi kết nối SignalR:", err));
+
+    connection.on("ReceiveMessage", (senderId, message) => {
+        console.log("📩 Nhận tin nhắn:", { senderId, message });
+        addMessage(senderId, message);
+    });
+    async function sendMessage() {
+        let senderId = parseInt(document.getElementById("senderId").value);
+        let receiverId = parseInt(document.getElementById("receiverId").value);
+        let messageInput = document.getElementById("message");
+
+        if (!messageInput) {
+            console.error("❌ Không tìm thấy ô nhập tin nhắn!");
+            return;
+        }
+
+        let message = messageInput.value.trim();
+
+        // 🚨 Kiểm tra nếu tin nhắn rỗng
+        if (!message) {
+            console.error("⚠️ Lỗi: Tin nhắn bị rỗng hoặc chỉ có khoảng trắng!");
+            alert("Tin nhắn không được để trống!");
+            return;
+        }
+
+        console.log("🔍 Kiểm tra dữ liệu trước khi gửi:", { senderId, receiverId, message });
+
+        let response = await fetch("/Chats/SendMessage", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ senderId, receiverId, message })
+        });
+
+        let result = await response.json();
+        console.log("📩 Phản hồi từ server:", result);
+
+        if (!response.ok) {
+            console.error("❌ Lỗi từ server:", result.error);
+        } else {
+            // ✅ Xóa nội dung input sau khi gửi thành công
+            messageInput.value = "";
+            addMessage(senderId, message, true);
+        }
+    }
+
+
+
+
+    function addMessage(senderId, message, isLocal = false) {
+        const chatBox = document.getElementById("chat-box");
+        const userId = parseInt(document.getElementById("senderId").value);
+        const isUser = senderId === userId; // Đảm bảo so sánh đúng kiểu dữ liệu
+
+        console.log("📝 Thêm tin nhắn vào giao diện:", { senderId, message, isUser });
+
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add("message", isUser ? "user" : "admin");
+        msgDiv.innerHTML = `<strong>${isUser ? "Bạn" : "Admin"}:</strong> ${message}`;
+
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        if (isLocal) {
+            console.log("📡 Gửi tin nhắn qua SignalR...");
+            connection.invoke("SendMessage", senderId, message)
+                .catch(err => console.error("❌ Lỗi khi gửi SignalR:", err));
+        }
+    }
+
+
+    function handleEnter(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendMessage();
+        }
+    }
+    document.addEventListener("DOMContentLoaded", async function () {
+        await loadChatHistory();
+    });
+
+    async function loadChatHistory() {
+        let senderId = parseInt(document.getElementById("senderId").value);
+        let receiverId = parseInt(document.getElementById("receiverId").value);
+
+        let response = await fetch(`/Chats/GetMessages?senderId=${senderId}&receiverId=${receiverId}`);
+        let messages = await response.json();
+
+        console.log("📩 Tin nhắn từ API:", messages); // Kiểm tra dữ liệu nhận về
+
+        if (!Array.isArray(messages) || messages.length === 0) {
+            console.warn("⚠️ Không có tin nhắn nào được trả về!");
+            return;
+        }
+
+        document.getElementById("chat-box").innerHTML = ""; // Xóa nội dung cũ
+
+        messages.forEach(msg => {
+            console.log(`📝 Thêm tin nhắn từ ${msg.senderId}: ${msg.message}`);
+            addMessage(msg.senderId, msg.message);
+        });
+    }
+
+</script>
+
+<style>
+    .chat-container {
+        width: 400px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin: 20px auto;
+        background: #f9f9f9;
+        border-radius: 10px;
+    }
+
+    #chat-box {
+        height: 300px;
+        overflow-y: auto;
+        border-bottom: 1px solid #ccc;
+        margin-bottom: 10px;
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message {
+        max-width: 75%;
+        padding: 8px 12px;
+        margin: 5px;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .user {
+        background: #007bff;
+        color: white;
+        align-self: flex-end;
+    }
+
+    .admin {
+        background: #f1f1f1;
+        align-self: flex-start;
+    }
+
+    .chat-input {
+        display: flex;
+        gap: 10px;
+    }
+
+        .chat-input input {
+            flex: 1;
+            padding: 5px;
+        }
+
+        .chat-input button {
+            padding: 5px 10px;
+            background: blue;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+</style>

@@ -1,0 +1,59 @@
+﻿@model DoAnWebTMDT.Data.Chat
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>Chat</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="ChatId" />
+            <div class="form-group">
+                <label asp-for="SenderId" class="control-label"></label>
+                <select asp-for="SenderId" class="form-control" asp-items="ViewBag.SenderId"></select>
+                <span asp-validation-for="SenderId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ReceiverId" class="control-label"></label>
+                <select asp-for="ReceiverId" class="form-control" asp-items="ViewBag.ReceiverId"></select>
+                <span asp-validation-for="ReceiverId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Message" class="control-label"></label>
+                <input asp-for="Message" class="form-control" />
+                <span asp-validation-for="Message" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SentAt" class="control-label"></label>
+                <input asp-for="SentAt" class="form-control" />
+                <span asp-validation-for="SentAt" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="IsRead" class="control-label"></label>
+                <input asp-for="IsRead" class="form-control" />
+                <span asp-validation-for="IsRead" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ChatRoomId" class="control-label"></label>
+                <input asp-for="ChatRoomId" class="form-control" />
+                <span asp-validation-for="ChatRoomId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

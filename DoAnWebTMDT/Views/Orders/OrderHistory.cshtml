@@ -1,0 +1,57 @@
+﻿@model List<DoAnWebTMDT.Data.Order>
+
+
+
+@{
+    ViewData["Title"] = "Lịch sử đơn hàng";
+   
+    Layout = "_LayoutUser";
+}
+
+<h2 class="text-2xl font-bold mb-4">Lịch sử đơn hàng</h2>
+
+@if (Model != null && Model.Any())
+{
+    <div class="overflow-x-auto">
+        <table class="table-auto w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border px-4 py-2">Mã đơn hàng</th>
+                    <th class="border px-4 py-2">Ngày đặt</th>
+                    <th class="border px-4 py-2">Tổng tiền</th>
+                    <th class="border px-4 py-2">Trạng thái</th>
+                    <th class="border px-4 py-2">Chi tiết</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+                    <tr>
+                        <td class="border px-4 py-2">@order.OrderId</td>
+                        <td class="border px-4 py-2">@(order.CreatedAt?.ToString("dd/MM/yyyy") ?? "Chưa có")</td>
+
+                        <td class="border px-4 py-2">@order.TotalAmount.ToString("N0") đ</td>
+                        <td class="border px-4 py-2">@order.OrderStatus</td>
+                        <td class="border px-4 py-2">
+                            <a href="@Url.Action("OrderDetails", "Orders", new { orderId = order.OrderId })" class="text-blue-500 hover:underline">Xem</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>    
+    </div>
+}
+else
+{
+    <p class="text-red-500">Bạn chưa có đơn hàng nào.</p>
+}
+
+@if (User.Identity == null || !User.Identity.IsAuthenticated)
+{
+    <h3 class="text-xl font-semibold mt-6">Tra cứu đơn hàng cho khách vãng lai</h3>
+    <form method="post" action="@Url.Action("GuestOrderLookup", "Orders")" class="mt-4">
+        <label for="phoneNumber" class="block text-sm font-medium">Nhập số điện thoại:</label>
+        <input type="text" id="phoneNumber" name="phoneNumber" required class="border rounded px-3 py-2 w-full mt-1" />
+        <button type="submit" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Tra cứu</button>
+    </form>
+}

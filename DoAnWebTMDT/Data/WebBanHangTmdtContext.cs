@@ -118,6 +118,10 @@ public partial class WebBanHangTmdtContext : DbContext
             entity.ToTable("Chat");
 
             entity.Property(e => e.ChatId).HasColumnName("ChatID");
+            entity.Property(e => e.ChatRoomId)
+                .HasDefaultValueSql("(newid())")
+                .HasColumnName("ChatRoomID");
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
             entity.Property(e => e.ReceiverId).HasColumnName("ReceiverID");
             entity.Property(e => e.SenderId).HasColumnName("SenderID");
             entity.Property(e => e.SentAt)

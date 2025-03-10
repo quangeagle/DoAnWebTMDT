@@ -1,0 +1,200 @@
+﻿@{
+    ViewData["Title"] = "Quản lý tin nhắn";
+}
+<h2>Quản lý tin nhắn</h2>
+
+<div class="chat-container">
+    <!-- Danh sách khách hàng -->
+    <div class="user-list">
+        <h3>Khách hàng</h3>
+        <ul id="user-list"></ul>
+    </div>
+
+    <!-- Khung chat -->
+    <div class="chat-box-container">
+        <div id="chat-box" class="chat-box"></div>
+        <div class="chat-input">
+            <input type="text" id="message" placeholder="Nhập tin nhắn...">
+            <button onclick="sendMessage()">Gửi</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    let selectedUserId = null;
+
+    connection.start().catch(err => console.error(err));
+
+    connection.on("ReceiveMessage", (senderId, message) => {
+        if (selectedUserId === senderId) {
+            displayMessage(senderId, message);
+        }
+        fetchUserList(); // Cập nhật danh sách user khi có tin nhắn mới
+    });
+
+    // Lấy danh sách khách hàng đã nhắn tin
+    async function fetchUserList() {
+        let response = await fetch("/Chats/GetChatUsers");
+        let users = await response.json();
+        const userList = document.getElementById("user-list");
+        userList.innerHTML = "";
+
+        users.forEach(user => {
+            const li = document.createElement("li");
+            li.textContent = `User ${user.userId}`;
+            li.classList.toggle("new-message", user.hasNewMessage); // Màu xanh nếu có tin nhắn mới
+            li.onclick = () => loadChat(user.userId, li);
+            userList.appendChild(li);
+        });
+    }
+
+    // Tải lịch sử chat khi admin bấm vào user
+    async function loadChat(userId, liElement) {
+        selectedUserId = userId;
+        liElement.classList.remove("new-message"); // Gỡ màu xanh khi admin bấm vào
+
+        document.getElementById("chat-box").innerHTML = ""; // Xóa tin nhắn cũ
+
+        let response = await fetch(`/Chats/GetMessages?senderId=${userId}&receiverId=4`);
+        let messages = await response.json();
+
+        messages.forEach(msg => displayMessage(msg.senderId, msg.message));
+    }
+
+    // Hiển thị tin nhắn lên giao diện
+    function displayMessage(senderId, message) {
+        const chatBox = document.getElementById("chat-box");
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add("message", senderId === 4 ? "admin" : "user");
+        msgDiv.innerHTML = `<strong>${senderId === 4 ? "Admin" : "Khách hàng"}:</strong> ${message}`;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Gửi tin nhắn từ admin
+    async function sendMessage() {
+        if (!selectedUserId) {
+            alert("Vui lòng chọn khách hàng trước!");
+            return;
+        }
+
+        const message = document.getElementById("message").value.trim();
+        if (!message) return;
+
+        let response = await fetch("/Chats/SendMessage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ senderId: 4, receiverId: selectedUserId, message }) // Admin gửi tin nhắn
+        });
+
+        let result = await response.json();
+        if (result.success) {
+            connection.invoke("SendMessage", 4, selectedUserId, message);
+            displayMessage(4, message);
+            document.getElementById("message").value = "";
+        }
+    }
+
+    fetchUserList(); // Gọi API lấy danh sách user lúc đầu
+</script>
+
+<style>
+    .chat-container {
+        display: flex;
+        width: 700px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+        background: #f9f9f9;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .user-list {
+        width: 200px;
+        border-right: 1px solid #ccc;
+        padding: 10px;
+        background: #f1f1f1;
+    }
+
+        .user-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .user-list li {
+            cursor: pointer;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            transition: 0.3s;
+        }
+
+            .user-list li:hover {
+                background: #ddd;
+            }
+
+    .new-message {
+        background-color: #28a745 !important;
+        color: white;
+        font-weight: bold;
+    }
+
+    .chat-box-container {
+        flex: 1;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-box {
+        height: 300px;
+        overflow-y: auto;
+        border-bottom: 1px solid #ccc;
+        margin-bottom: 10px;
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message {
+        max-width: 75%;
+        padding: 8px 12px;
+        margin: 5px;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .user {
+        background: #007bff;
+        color: white;
+        align-self: flex-start;
+    }
+
+    .admin {
+        background: #f1f1f1;
+        align-self: flex-end;
+    }
+
+    .chat-input {
+        display: flex;
+        gap: 10px;
+    }
+
+        .chat-input input {
+            flex: 1;
+            padding: 5px;
+        }
+
+        .chat-input button {
+            padding: 5px 10px;
+            background: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+</style>

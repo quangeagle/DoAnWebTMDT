@@ -1,11 +1,12 @@
 using DoAnWebTMDT.Data;
+using DoAnWebTMDT.Hubs;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<ZaloPayController>();
-
+builder.Services.AddSignalR();
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<WebBanHangTmdtContext>(options =>
 {
@@ -45,5 +46,9 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Products}/{action=CustomerIndex}/{id?}");
-
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    endpoints.MapHub<ChatHub>("/ChatHub"); // Đăng ký hub
+});
 app.Run();

@@ -160,5 +160,44 @@ namespace DoAnWebTMDT.Controllers
         {
             return View();
         }
+
+        public async Task<IActionResult> OrderHistory()
+        {
+            int? userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return View(new List<Order>()); // ✅ Luôn trả về danh sách rỗng nếu không có đơn hàng
+            }
+
+            var orders = await _context.Orders
+                .Where(o => o.AccountId == userId)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();  // ✅ Luôn lấy danh sách (List<Order>)
+
+            return View(orders);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> GuestOrderLookup(string phoneNumber)
+        {
+            var orders = await _context.Orders
+                .Where(o => o.GuestPhone == phoneNumber)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();  // ✅ Đảm bảo trả về danh sách
+
+            if (!orders.Any())
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy đơn hàng nào cho số điện thoại này.";
+                return View(new List<Order>()); // ✅ Trả về danh sách rỗng thay vì null
+            }
+
+            return View("OrderHistory", orders);
+        }
+
     }
 }

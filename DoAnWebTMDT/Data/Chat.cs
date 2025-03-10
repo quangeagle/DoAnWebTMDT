@@ -15,6 +15,10 @@ public partial class Chat
 
     public DateTime? SentAt { get; set; }
 
+    public bool? IsRead { get; set; }
+
+    public Guid? ChatRoomId { get; set; }
+
     public virtual Account Receiver { get; set; } = null!;
 
     public virtual Account Sender { get; set; } = null!;
