@@ -28,6 +28,19 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()    // Cho phép mọi nguồn gửi request
+                   .AllowAnyMethod()    // Cho phép tất cả phương thức (GET, POST, PUT, DELETE,...)
+                   .AllowAnyHeader();   // Cho phép mọi header
+        });
+});
+
+builder.Services.AddHttpClient(); // Không cần đăng ký HttpClient riêng cho controller
+builder.Services.AddHttpClient<ZaloPayController>();
 
 var app = builder.Build();
 app.UseSession();
@@ -36,6 +49,7 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -46,6 +60,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Products}/{action=CustomerIndex}/{id?}");
+app.MapControllers();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
