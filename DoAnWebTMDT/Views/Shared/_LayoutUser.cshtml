@@ -4,70 +4,46 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewData["Title"] - Cửa hàng</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/user.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/css/user.css" asp-append-version="true">
     <style>
-        /* 🔹 Navbar cố định khi cuộn */
-        /* 🔹 Navbar mặc định */
+        /* 🔹 Navbar */
         .navbar {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            background: linear-gradient(45deg, #007bff, #6610f2); /* Màu nền ban đầu */
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             transition: background 0.3s ease-in-out;
             z-index: 1000;
         }
-
-            /* 🔹 Khi cuộn xuống */
-            .navbar.scrolled {
-                background: rgba(255, 255, 255, 0.85) !important;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-
-                /* 🔹 Đổi màu chữ khi cuộn */
-                .navbar.scrolled .nav-link {
-                    color: black !important;
-                }
-
-        /* 🔹 Định dạng menu */
-        .navbar-nav {
-            display: flex;
-            align-items: center;
-            gap: 20px;
+        .navbar.scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-
-        /* 🔹 Link Navbar */
-        .nav-link {
-            color: white !important;
-            font-size: 18px;
-            transition: 0.3s;
-            padding: 8px 15px;
-            border-radius: 5px;
+        .navbar .nav-link {
+            color: white;
+            transition: color 0.3s;
         }
-
-        /* 🔹 Khi cuộn xuống đổi màu chữ */
-      
-
-        /* 🔹 Ô tìm kiếm ở giữa */
+        .navbar.scrolled .nav-link {
+            color: black !important;
+        }
+        
+        /* 🔹 Tìm kiếm */
         .search-box {
             position: relative;
-            flex-grow: 1;
-            max-width: 500px;
-            margin: 0 auto;
+            max-width: 400px;
         }
-
         .search-box input {
             width: 100%;
-            padding: 10px 50px 10px 15px;
+            padding: 10px 40px 10px 15px;
             border-radius: 25px;
-            border: none;
-            font-size: 16px;
+            border: 1px solid #ccc;
         }
-
         .search-box button {
             position: absolute;
             right: 10px;
@@ -76,70 +52,46 @@
             border: none;
             background: none;
             cursor: pointer;
-            font-size: 18px;
             color: #007bff;
         }
-
-        /* 🔹 Cụm bên trái */
-        .left-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-right: auto;
-        }
-
-        /* 🔹 Cụm bên phải */
-        .right-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-left: auto;
-        }
-
-        /* 🔹 Nút */
-        .btn-custom {
-            border-radius: 25px;
-            padding: 8px 15px;
-            font-size: 16px;
-            font-weight: bold;
-        }
-
+        
         /* 🔹 Responsive */
-     
+        
     </style>
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark">
             <div class="container-fluid">
-                <!-- 🔹 Cụm bên trái: Trang chủ | Sản phẩm | Giỏ hàng | Yêu thích -->
-                <div class="left-group">
-                    <a class="nav-link" asp-controller="Categories" asp-action="TrangChu">🌏 Trang chủ</a>
-                    <a class="nav-link" asp-controller="Products" asp-action="CustomerIndex">📦 Sản phẩm</a>
-                    <a class="nav-link" asp-controller="GioHangs" asp-action="GioHangCus">🛒 Giỏ hàng</a>
-                    <a class="nav-link" asp-controller="Wishlist" asp-action="Index">❤️ Yêu thích</a>
-                    <a class="nav-link" asp-controller="Orders" asp-action="OrderHistory">❤️ Yêu thích</a>
-                    <a class="nav-link" asp-controller="Chats" asp-action="Index">❤️ Yêu thích</a>
-                </div>
-
-                <!-- 🔹 Ô tìm kiếm ở giữa -->
-                <form class="search-box" asp-controller="Products" asp-action="Search" method="get">
-                    <input type="text" name="query" placeholder="🔍 Tìm sản phẩm..." aria-label="Search">
-                    <button type="submit"><i class="fas fa-search"></i></button>
-                </form>
-
-                <!-- 🔹 Cụm bên phải: Đăng nhập / Đăng ký -->
-                <div class="right-group">
-                    @if (User.Identity.IsAuthenticated)
-                    {
-                        <span class="nav-link">👤 @User.Identity.Name</span>
-                        <a class="nav-link btn btn-danger text-white btn-custom" asp-controller="Accounts" asp-action="Logout">🚪 Đăng xuất</a>
-                    }
-                    else
-                    {
-                        <a class="nav-link btn btn-primary text-white btn-custom" asp-controller="Accounts" asp-action="Login">🔑 Đăng nhập</a>
-                        <a class="nav-link btn btn-success text-white btn-custom" asp-controller="Accounts" asp-action="Register">📝 Đăng ký</a>
-                    }
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">🏪 Cửa hàng</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item"><a class="nav-link" asp-controller="Categories" asp-action="TrangChu">Trang chủ</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Products" asp-action="CustomerIndex">Sản phẩm</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="GioHangs" asp-action="GioHangCus">Giỏ hàng</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Wishlist" asp-action="Index">Yêu thích</a></li>
+                    </ul>
+                    
+                    <form class="search-box d-flex" asp-controller="Products" asp-action="Search" method="get">
+                        <input type="text" name="query" placeholder="🔍 Tìm sản phẩm..." aria-label="Search">
+                        <button type="submit"><i class="fas fa-search"></i></button>
+                    </form>
+                    
+                    <ul class="navbar-nav ms-auto">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item"><span class="nav-link">👤 @User.Identity.Name</span></li>
+                            <li class="nav-item"><a class="nav-link btn btn-danger text-white btn-custom" asp-controller="Accounts" asp-action="Logout">🚪 Đăng xuất</a></li>
+                        }
+                        else
+                        {
+                            <li class="nav-item"><a class="nav-link btn btn-primary text-white btn-custom" asp-controller="Accounts" asp-action="Login">🔑 Đăng nhập</a></li>
+                            <li class="nav-item"><a class="nav-link btn btn-success text-white btn-custom" asp-controller="Accounts" asp-action="Register">📝 Đăng ký</a></li>
+                        }
+                    </ul>
                 </div>
             </div>
         </nav>
@@ -163,7 +115,6 @@
                 }
             });
         });
-
     </script>
 
     <!-- ✅ Bootstrap + FontAwesome -->

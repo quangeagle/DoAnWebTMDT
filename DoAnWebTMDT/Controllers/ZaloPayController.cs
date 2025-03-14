@@ -59,9 +59,9 @@ public class ZaloPayController : ControllerBase
             item = "[]",
             embed_data = JsonConvert.SerializeObject(new
             {
-                redirecturl = "https://2119-27-64-60-194.ngrok-free.app/Categories/TrangChu"
+                redirecturl = "https://9f09-113-161-95-116.ngrok-free.app/Categories/TrangChu"
             }),
-            callback_url = "https://2119-27-64-60-194.ngrok-free.app/api/ZaloPay/zalo-callback",
+            callback_url = "https://9f09-113-161-95-116.ngrok-free.app/api/ZaloPay/zalo-callback",
             bank_code = "",
             description = $"Thanh toán đơn hàng #{orderId}"
         };
@@ -117,14 +117,14 @@ public class ZaloPayController : ControllerBase
 
         try
         {
-            // Đọc dữ liệu từ request
+        
             Request.EnableBuffering();
             var body = await new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true).ReadToEndAsync();
             Request.Body.Position = 0;
 
             Console.WriteLine($"📌 Raw Body: {body}");
 
-            // Parse JSON cấp 1
+      
             var cbdata = JsonConvert.DeserializeObject<Dictionary<string, object>>(body);
             if (cbdata == null || !cbdata.ContainsKey("data") || !cbdata.ContainsKey("mac"))
             {
@@ -137,7 +137,7 @@ public class ZaloPayController : ControllerBase
             Console.WriteLine($"📌 Data nhận được: {dataStr}");
             Console.WriteLine($"📌 MAC từ ZaloPay: {reqMac}");
 
-            // Tính toán lại MAC
+         
             var computedMac = HmacSha256(dataStr, key2).ToLower().Trim();
             Console.WriteLine($"📌 MAC Tính Toán: {computedMac}");
 
@@ -147,11 +147,10 @@ public class ZaloPayController : ControllerBase
                 return Ok(new { return_code = -1, return_message = "MAC không hợp lệ" });
             }
 
-            // Parse JSON cấp 2 (dữ liệu bên trong "data")
+           
             var dataJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataStr);
             Console.WriteLine($"📌 JSON Data Parsed: {JsonConvert.SerializeObject(dataJson, Formatting.Indented)}");
 
-            // Kiểm tra "embed_data" có phải JSON không, rồi parse tiếp
             if (dataJson.ContainsKey("embed_data") && dataJson["embed_data"] is string embedDataStr)
             {
                 try
@@ -166,28 +165,27 @@ public class ZaloPayController : ControllerBase
                 }
             }
 
-            // Kiểm tra dữ liệu callback có đủ không
+          
             if (!dataJson.ContainsKey("app_trans_id"))
             {
                 Console.WriteLine("❌ Thiếu app_trans_id");
                 return BadRequest(new { return_code = -1, return_message = "Thiếu app_trans_id" });
             }
 
-            // Kiểm tra trường sub_return_code trong callback
-            int status = 0; // Mặc định là 0 nếu không có
+            
+            int status = 0; 
             if (dataJson.ContainsKey("sub_return_code"))
             {
                 int subReturnCode = Convert.ToInt32(dataJson["sub_return_code"]);
                 Console.WriteLine($"📌 sub_return_code: {subReturnCode}");
 
-                // Nếu sub_return_code = 1 thì giao dịch thành công
                 if (subReturnCode == 1)
                 {
-                    status = 1; // Thành công
+                    status = 1; 
                 }
                 else
                 {
-                    status = 0; // Thất bại
+                    status = 0; 
                 }
             }
             else
@@ -195,7 +193,7 @@ public class ZaloPayController : ControllerBase
                 Console.WriteLine("⚠️ Không tìm thấy sub_return_code trong callback, mặc định là 0 (Pending/Canceled)");
             }
 
-            // Lấy Order ID từ app_trans_id
+         
             var appTransId = dataJson["app_trans_id"].ToString();
             if (!appTransId.Contains("_"))
             {
@@ -206,7 +204,7 @@ public class ZaloPayController : ControllerBase
             int orderId = Convert.ToInt32(appTransId.Split('_')[1]);
             Console.WriteLine($"✅ Callback hợp lệ - OrderID: {orderId}, Status: {status}");
 
-            // Kiểm tra đơn hàng trong DB
+           
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
             if (order == null)
             {
@@ -214,7 +212,6 @@ public class ZaloPayController : ControllerBase
                 return Ok(new { return_code = 0, return_message = "Không tìm thấy đơn hàng" });
             }
 
-            // Cập nhật trạng thái đơn hàng
             order.OrderStatus = status == 1 ? "Pending" : "Completed";
             await _context.SaveChangesAsync();
             Console.WriteLine($"🔄 Cập nhật đơn hàng {orderId} thành {order.OrderStatus}");

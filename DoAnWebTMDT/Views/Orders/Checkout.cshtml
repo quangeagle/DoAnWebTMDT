@@ -1,8 +1,10 @@
-﻿@model List<CheckoutViewModel>
+﻿@model CheckoutViewModel
 
 @{
     ViewData["Title"] = "Thông Tin Giao Hàng";
     var isLoggedIn = Context.Session.GetInt32("AccountId") != null;
+    
+    Layout = "_LayoutUser";
 }
 
 <h2 class="text-xl font-bold mb-4">Thông Tin Giao Hàng</h2>
@@ -14,7 +16,7 @@
     </div>
 }
 
-@if (Model != null && Model.Any())
+@if (Model != null && Model.CartItems.Any())
 {
     <table class="w-full border-collapse border border-gray-300 mb-4">
         <thead>
@@ -27,7 +29,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model)
+            @foreach (var item in Model.CartItems)
             {
                 <tr>
                     <td class="border border-gray-300 p-2">
@@ -43,7 +45,7 @@
     </table>
 
     <p class="text-right text-lg font-semibold">
-        Tổng tiền: @Model.Sum(d => d.Quantity * d.NewPrice).ToString("N0") đ
+        Tổng tiền: @Model.CartItems.Sum(d => d.Quantity * d.NewPrice).ToString("N0") đ
     </p>
 
     <h3 class="text-lg font-bold mt-4">Nhập Thông Tin Giao Hàng</h3>
@@ -67,12 +69,52 @@
         else
         {
             <p class="text-green-600">✅ Bạn đã đăng nhập, thông tin tài khoản sẽ được sử dụng.</p>
+
+            <div class="mb-4">
+                <h4 class="font-medium">Chọn Địa Chỉ Giao Hàng:</h4>
+                @if (Model.Addresses.Any())
+                {
+                    @foreach (var address in Model.Addresses)
+                    {
+                        <div class="mb-2">
+                            <input type="radio" id="address_@address.AddressId" name="SelectedAddressId" value="@address.AddressId" class="mr-2" checked />
+                            <label for="address_@address.AddressId">
+                                @address.FullName - @address.Phone - @address.AddressDetail
+                            </label>
+                        </div>
+                    }
+                }
+                
+                <div class="mt-2">
+                    <input type="radio" id="newAddress" name="SelectedAddressId" value="" class="mr-2" />
+                    <label for="newAddress" class="font-medium">Nhập địa chỉ mới</label>
+                </div>
+
+                <div id="newAddressFields" class="hidden mt-4 border p-4 bg-gray-100 rounded">
+                    <h4 class="font-semibold mb-2">Thông Tin Địa Chỉ Mới</h4>
+                    <div class="mb-2">
+                        <label for="NewFullName" class="block font-medium">Họ và Tên</label>
+                        <input type="text" id="NewFullName" name="NewFullName" class="w-full border border-gray-300 p-2" />
+                    </div>
+                    <div class="mb-2">
+                        <label for="NewPhone" class="block font-medium">Số Điện Thoại</label>
+                        <input type="text" id="NewPhone" name="NewPhone" class="w-full border border-gray-300 p-2" />
+                    </div>
+                    <div class="mb-2">
+                        <label for="NewAddressDetail" class="block font-medium">Địa chỉ</label>
+                        <textarea id="NewAddressDetail" name="NewAddressDetail" class="w-full border border-gray-300 p-2"></textarea>
+                    </div>
+                </div>
+            </div>
         }
 
-        <div class="mb-2">
-            <label for="Address" class="block font-medium">Địa Chỉ</label>
-            <textarea id="Address" name="addressDetail" required class="w-full border border-gray-300 p-2"></textarea>
-        </div>
+        @if (!isLoggedIn)
+        {
+            <div class="mb-2">
+                <label for="GuestAddress" class="block font-medium">Địa Chỉ</label>
+                <textarea id="GuestAddress" name="NewAddressDetail" required class="w-full border border-gray-300 p-2"></textarea>
+            </div>
+        }
 
         <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Xác Nhận Đơn Hàng</button>
     </form>
@@ -81,3 +123,21 @@ else
 {
     <p class="text-center text-gray-500">Không có sản phẩm nào trong giỏ hàng.</p>
 }
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const newAddressRadio = document.getElementById("newAddress");
+        const newAddressFields = document.getElementById("newAddressFields");
+        const addressRadios = document.querySelectorAll("input[name='SelectedAddressId']");
+
+        addressRadios.forEach(radio => {
+            radio.addEventListener("change", function () {
+                if (newAddressRadio.checked) {
+                    newAddressFields.classList.remove("hidden");
+                } else {
+                    newAddressFields.classList.add("hidden");
+                }
+            });
+        });
+    });
+</script>

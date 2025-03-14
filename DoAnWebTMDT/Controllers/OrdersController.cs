@@ -28,23 +28,32 @@ namespace DoAnWebTMDT.Controllers
         public IActionResult Checkout()
         {
             int? userId = GetCurrentUserId();
-            List<CheckoutViewModel> checkoutModel;
+            List<CheckoutItemViewModel> cartItems;
+            List<AddressViewModel> userAddresses = new();
 
-            if (userId != null)
+            if (userId.HasValue)
             {
-                var gioHang = _context.GioHangs
+                cartItems = _context.GioHangs
                     .Where(g => g.AccountId == userId)
                     .Include(g => g.Product)
-                    .ToList();
-
-                checkoutModel = gioHang.Where(g => g.Product != null)
-                    .Select(g => new CheckoutViewModel
+                    .Where(g => g.Product != null)
+                    .Select(g => new CheckoutItemViewModel
                     {
                         ProductId = g.ProductId,
                         ProductName = g.Product.Name,
                         ImageUrl = g.Product.MediaPath,
                         Quantity = g.Quantity,
                         NewPrice = g.Product.NewPrice ?? 0
+                    }).ToList();
+
+                userAddresses = _context.Addresses
+                    .Where(a => a.AccountId == userId)
+                    .Select(a => new AddressViewModel
+                    {
+                        AddressId = a.AddressId,
+                        FullName = a.FullName,
+                        Phone = a.Phone,
+                        AddressDetail = a.AddressDetail
                     }).ToList();
             }
             else
@@ -54,7 +63,7 @@ namespace DoAnWebTMDT.Controllers
                     ? JsonConvert.DeserializeObject<List<CartItemViewModel>>(cartSession)
                     : new List<CartItemViewModel>();
 
-                checkoutModel = guestCart.Select(g => new CheckoutViewModel
+                cartItems = guestCart.Select(g => new CheckoutItemViewModel
                 {
                     ProductId = g.ProductId,
                     ProductName = g.ProductName,
@@ -64,25 +73,30 @@ namespace DoAnWebTMDT.Controllers
                 }).ToList();
             }
 
-            if (!checkoutModel.Any())
+            if (!cartItems.Any())
             {
                 TempData["ErrorMessage"] = "Không có sản phẩm nào trong giỏ hàng.";
-                return View();
+                return RedirectToAction("Cart", "Shopping");
             }
 
-            return View(checkoutModel);
+            return View(new CheckoutViewModel
+            {
+                CartItems = cartItems,
+                Addresses = userAddresses
+            });
         }
 
         [HttpPost]
-        public async Task<IActionResult> ConfirmOrder(string fullName, string phoneNumber, string email, string addressDetail)
+        public async Task<IActionResult> ConfirmOrder(int? selectedAddressId, string? newFullName, string? newPhone, string? newAddressDetail, string fullName, string phoneNumber, string email)
         {
             int? userId = GetCurrentUserId();
             List<CartItemViewModel> cartItems;
 
-            if (userId != null)
+            if (userId.HasValue)
             {
-                cartItems = _context.GioHangs.Include(g => g.Product)
-                    .Where(g => g.AccountId == userId)
+                cartItems = _context.GioHangs
+                    .Include(g => g.Product)
+                    .Where(g => g.AccountId == userId && g.Product != null)
                     .Select(g => new CartItemViewModel
                     {
                         ProductId = g.ProductId,
@@ -99,66 +113,89 @@ namespace DoAnWebTMDT.Controllers
                     : new List<CartItemViewModel>();
             }
 
-            if (!cartItems.Any())
+          /*  if (!cartItems.Any())
             {
                 TempData["ErrorMessage"] = "Giỏ hàng của bạn đang trống.";
                 return RedirectToAction("Checkout");
-            }
+            }*/
 
-            int? addressId = userId != null ? _context.Addresses
-                .Where(a => a.AccountId == userId)
-                .Select(a => a.AddressId)
-                .FirstOrDefault() : null;
+            int? addressId = selectedAddressId;
+            string finalAddress = newAddressDetail;
+
+            if (userId.HasValue)
+            {
+                // Nếu chọn địa chỉ có sẵn
+                if (selectedAddressId.HasValue)
+                {
+                    var selectedAddress = await _context.Addresses
+                        .FirstOrDefaultAsync(a => a.AddressId == selectedAddressId);
+
+                    if (selectedAddress != null)
+                    {
+                        addressId = selectedAddress.AddressId;
+                        finalAddress = selectedAddress.AddressDetail;
+                    }
+                }
+                else if (!string.IsNullOrEmpty(newAddressDetail) && !string.IsNullOrEmpty(newFullName) && !string.IsNullOrEmpty(newPhone))
+                {
+                    // Nếu nhập địa chỉ mới, lưu vào database
+                    var newAddress = new Address
+                    {
+                        AccountId = userId.Value,
+                        FullName = newFullName,
+                        Phone = newPhone,
+                        AddressDetail = newAddressDetail
+                    };
+
+                    _context.Addresses.Add(newAddress);
+                    await _context.SaveChangesAsync();
+
+                    addressId = newAddress.AddressId; // Cập nhật AddressId để sử dụng
+                    finalAddress = newAddress.AddressDetail;
+                }
+            }
 
             decimal totalAmount = cartItems.Sum(g => g.Quantity * g.NewPrice);
 
             var order = new Order
             {
                 AccountId = userId,
+                AddressId = addressId,
                 GuestFullName = userId == null ? fullName : null,
                 GuestPhone = userId == null ? phoneNumber : null,
                 GuestEmail = userId == null ? email : null,
-                GuestAddress = userId == null ? addressDetail : null,
+                GuestAddress = userId == null ? finalAddress : null,
                 TotalAmount = totalAmount,
                 OrderStatus = "Pending",
-                CreatedAt = DateTime.Now,
-                AddressId = addressId
+                CreatedAt = DateTime.Now
             };
 
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
-            foreach (var item in cartItems)
+            var orderDetails = cartItems.Select(item => new OrderDetail
             {
-                var orderDetail = new OrderDetail
-                {
-                    OrderId = order.OrderId,
-                    ProductId = item.ProductId,
-                    Quantity = item.Quantity,
-                    Price = item.NewPrice
-                };
+                OrderId = order.OrderId,
+                ProductId = item.ProductId,
+                Quantity = item.Quantity,
+                Price = item.NewPrice
+            }).ToList();
 
-                _context.OrderDetails.Add(orderDetail);
-            }
+            _context.OrderDetails.AddRange(orderDetails);
             await _context.SaveChangesAsync();
 
-            if (userId != null)
+            if (userId.HasValue)
             {
-                var gioHangItems = _context.GioHangs.Where(g => g.AccountId == userId);
-                _context.GioHangs.RemoveRange(gioHangItems);
-                await _context.SaveChangesAsync();
+                _context.GioHangs.RemoveRange(_context.GioHangs.Where(g => g.AccountId == userId));
             }
             else
             {
                 HttpContext.Session.Remove("GuestCart");
             }
 
-            return RedirectToAction("CreatePayment", "ZaloPay", new { orderId = order.OrderId, amount = order.TotalAmount });
-        }
+            await _context.SaveChangesAsync();
 
-        public IActionResult CreatePayment(int orderId, decimal amount)
-        {
-            return View();
+            return RedirectToAction("CreatePayment", "ZaloPay", new { orderId = order.OrderId, amount = order.TotalAmount });
         }
 
         public async Task<IActionResult> OrderHistory()
@@ -201,3 +238,4 @@ namespace DoAnWebTMDT.Controllers
 
     }
 }
+
