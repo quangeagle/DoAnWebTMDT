@@ -7,7 +7,7 @@
 
 <div class="container-fluid mt-4">
     <div class="row">
-       
+
         <aside class="col-lg-3 col-md-4 d-none d-md-block sticky-sidebar">
             <div class="card shadow-sm p-3">
                 <h5 class="font-weight-bold">🔍 Tìm kiếm</h5>
@@ -76,7 +76,7 @@
                             <div class="card-body text-center">
                                 <h5 class="card-title font-weight-bold">@item.Name</h5>
                                 <p class="card-text text-danger font-weight-bold">Giá: @item.NewPrice đ</p>
-                                <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); addToWishlist(@item.ProductId)">❤️ Yêu thích</button>
+                                <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); addToWishlist(@item.ProductId, this)">❤️ Yêu thích</button>
                                 <button class="btn btn-success btn-block mt-2" onclick="event.stopPropagation(); addToCart(@item.ProductId, this)">🛒 Thêm vào giỏ</button>
                             </div>
                         </div>
@@ -104,15 +104,48 @@
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'productId=' + encodeURIComponent(productId) + '&quantity=1'
         })
-        .then(response => response.json())
-        .then(data => { alert(data.message); })
-        .catch(error => { console.error('Lỗi:', error); alert("Có lỗi xảy ra, vui lòng thử lại."); })
-        .finally(() => { button.innerHTML = originalText; button.disabled = false; });
+            .then(response => response.json())
+            .then(data => { alert(data.message); })
+            .catch(error => { console.error('Lỗi:', error); alert("Có lỗi xảy ra, vui lòng thử lại."); })
+            .finally(() => { button.innerHTML = originalText; button.disabled = false; });
     }
 
-    function addToWishlist(productId) {
+    function addToWishlist(productId, button) {
         event.stopPropagation();
-        alert("Đã thêm sản phẩm vào danh sách yêu thích!");
+        let originalText = button.innerHTML;
+        button.innerHTML = "⏳ Đang thêm...";
+        button.disabled = true;
+
+        fetch('/LikeLists/AddToLikeList', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'productId=' + encodeURIComponent(productId)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Server error: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    button.innerHTML = "❤️ Đã thêm";
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }, 2000);
+                } else {
+                    alert(data.message);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi:', error);
+                alert("Có lỗi xảy ra, vui lòng thử lại.");
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
     }
 
     function filterProducts() {
@@ -129,8 +162,8 @@
             let price = parseInt(product.getAttribute("data-price"));
 
             let match = (!searchValue || name.includes(searchValue)) &&
-                        (!categoryValue || category === categoryValue) &&
-                        (!priceValue || price <= priceValue);
+                (!categoryValue || category === categoryValue) &&
+                (!priceValue || price <= priceValue);
 
             product.style.display = match ? "block" : "none";
         });
@@ -147,7 +180,7 @@
         }
     }
 
-    document.getElementById("priceRange").addEventListener("input", function() {
+    document.getElementById("priceRange").addEventListener("input", function () {
         document.getElementById("priceLabel").textContent = new Intl.NumberFormat('vi-VN').format(this.value) + " đ";
     });
 </script>
@@ -178,20 +211,17 @@
         overflow: hidden;
     }
 
-    .product-card:hover {
-        transform: scale(1.05);
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-    }
+        .product-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
 
-    .product-card img {
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
-    }
+        .product-card img {
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
 
     .btn {
         border-radius: 8px;
     }
-
-    /* 🔹 Responsive */
-    
 </style>

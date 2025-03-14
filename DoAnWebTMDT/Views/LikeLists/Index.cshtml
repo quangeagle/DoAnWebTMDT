@@ -1,0 +1,39 @@
+﻿@model List<DoAnWebTMDT.Controllers.LikeListViewModel>
+
+@{
+    ViewData["Title"] = "Danh sách yêu thích";
+    Layout = "_LayoutUser";
+}
+
+<div class="container mt-4">
+    <h2>Danh sách yêu thích</h2>
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-info">@TempData["Message"]</div>
+    }
+    @if (Model.Any())
+    {
+        <div class="row">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <img src="@item.ImageUrl" class="card-img-top" alt="@item.ProductName" style="height: 200px; object-fit: cover;">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">@item.ProductName</h5>
+                            <p class="card-text text-danger">@item.NewPrice.ToString("N0") đ</p>
+                            <form asp-action="RemoveFromLikeList" method="post">
+                                <input type="hidden" name="productId" value="@item.ProductId" />
+                                <button type="submit" class="btn btn-danger">Xóa</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p>Danh sách yêu thích của bạn đang trống.</p>
+    }
+</div>
