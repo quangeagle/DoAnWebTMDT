@@ -59,9 +59,9 @@ public class ZaloPayController : ControllerBase
             item = "[]",
             embed_data = JsonConvert.SerializeObject(new
             {
-                redirecturl = "https://9f09-113-161-95-116.ngrok-free.app/Categories/TrangChu"
+                redirecturl = "https://a419-27-64-60-194.ngrok-free.app/Categories/TrangChu"
             }),
-            callback_url = "https://9f09-113-161-95-116.ngrok-free.app/api/ZaloPay/zalo-callback",
+            callback_url = "https://a419-27-64-60-194.ngrok-free.app/api/ZaloPay/zalo-callback",
             bank_code = "",
             description = $"Thanh toán đơn hàng #{orderId}"
         };
@@ -220,7 +220,7 @@ public class ZaloPayController : ControllerBase
             }
 
             // Cập nhật trạng thái thanh toán
-            payment.PaymentStatus = status == 1 ? "Completed" : "Pending";
+            payment.PaymentStatus = status == 1 ? "Pending" : "Completed";
             await _context.SaveChangesAsync();
             Console.WriteLine($"🔄 Cập nhật thanh toán {payment.PaymentId} thành {payment.PaymentStatus}");
 

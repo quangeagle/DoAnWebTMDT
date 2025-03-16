@@ -270,7 +270,6 @@ namespace DoAnWebTMDT.Controllers
                 return NotFound();
             }
 
-           
             var payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
             if (payment != null && payment.PaymentMethod == "COD")
             {
@@ -278,11 +277,24 @@ namespace DoAnWebTMDT.Controllers
                 payment.PaymentStatus = "Completed";
             }
 
-            order.OrderStatus = "Completed"; 
+            order.OrderStatus = "Completed";
             await _context.SaveChangesAsync();
+
+            // ✅ Kiểm tra xem có AccountId hay không
+            if (order.AccountId.HasValue)
+            {
+                Console.WriteLine($"✅ Cộng điểm cho AccountID: {order.AccountId.Value}, Tổng tiền: {order.TotalAmount}");
+                AddLoyaltyPoints(order.AccountId.Value, order.TotalAmount);
+            }
+            else
+            {
+                Console.WriteLine("⚠️ Đơn hàng không có AccountId, không thể cộng điểm!");
+            }
 
             return RedirectToAction("OrderHistory");
         }
+
+
         [HttpPost]
         public async Task<IActionResult> UpdateOrderStatus(int orderId, string status)
         {
@@ -297,6 +309,31 @@ namespace DoAnWebTMDT.Controllers
 
             return RedirectToAction("ManageOrders");
         }
+        private void AddLoyaltyPoints(int accountId, decimal orderAmount)
+        {
+            int pointsEarned = (int)(orderAmount / 10000);
+            Console.WriteLine($"🚀 Cộng {pointsEarned} điểm cho AccountID: {accountId}");
+
+            var loyalty = _context.LoyaltyPoints.FirstOrDefault(x => x.AccountId == accountId);
+            if (loyalty == null)
+            {
+                Console.WriteLine($"🆕 Tạo mới điểm thưởng cho AccountID: {accountId}");
+                _context.LoyaltyPoints.Add(new LoyaltyPoint
+                {
+                    AccountId = accountId,
+                    TotalPoints = pointsEarned
+                });
+            }
+            else
+            {
+                Console.WriteLine($"🔄 Cập nhật điểm: {loyalty.TotalPoints} + {pointsEarned}");
+                loyalty.TotalPoints += pointsEarned;
+            }
+
+            _context.SaveChanges();
+        }
+
+
 
         public IActionResult ManageOrders()
         {
