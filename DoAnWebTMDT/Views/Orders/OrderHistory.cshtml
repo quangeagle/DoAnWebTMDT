@@ -7,6 +7,16 @@
 
 <h2 class="text-2xl font-bold mb-4">Lịch sử đơn hàng</h2>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <p class="text-green-500">@TempData["SuccessMessage"]</p>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <p class="text-red-500">@TempData["ErrorMessage"]</p>
+}
+
 @if (Model != null && Model.Any())
 {
     <div class="overflow-x-auto">
@@ -16,35 +26,70 @@
                     <th class="border px-4 py-2">Mã đơn hàng</th>
                     <th class="border px-4 py-2">Ngày đặt</th>
                     <th class="border px-4 py-2">Tổng tiền</th>
-                    <th class="border px-4 py-2">Phương thức thanh toán</th> <!-- 🔹 Thêm cột -->
+                    <th class="border px-4 py-2">Phương thức thanh toán</th>
                     <th class="border px-4 py-2">Trạng thái</th>
+                    <th class="border px-4 py-2">Hành động</th>
                     <th class="border px-4 py-2">Chi tiết</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var order in Model)
                 {
+                    var paymentMethod = order.Payments?.FirstOrDefault()?.PaymentMethod ?? "Chưa có";
+                    var paymentStatus = order.Payments?.FirstOrDefault()?.PaymentStatus ?? "Chưa có";
+
                     <tr>
                         <td class="border px-4 py-2">@order.OrderId</td>
                         <td class="border px-4 py-2">@(order.CreatedAt?.ToString("dd/MM/yyyy") ?? "Chưa có")</td>
                         <td class="border px-4 py-2">@order.TotalAmount.ToString("N0") đ</td>
+                        <td class="border px-4 py-2">@paymentMethod</td>
                         <td class="border px-4 py-2">
-                            <!-- 🔹 Hiển thị phương thức thanh toán -->
-                            @(order.Payments?.FirstOrDefault()?.PaymentMethod ?? "Chưa có")
+                            @if (order.OrderStatus == "Completed")
+                            {
+                                <span class="text-green-500">Hoàn thành</span>
+                            }
+                            else if (order.OrderStatus == "Shipped")
+                            {
+                                <span class="text-blue-500">Đang giao</span>
+                            }
+                            else if (order.OrderStatus == "Pending")
+                            {
+                                <span class="text-yellow-500">Chờ xác nhận</span>
+                            }
+                            else
+                            {
+                                <span class="text-gray-500">@order.OrderStatus</span>
+                            }
                         </td>
-                        <td class="border px-4 py-2">@order.OrderStatus</td>
+                        <td class="border px-4 py-2">
+                            @if (order.OrderStatus == "Shipped")
+                            {
+@if (order.OrderStatus == "Shipped" && (order.IsPaid == false))
+
+                                {
+                                    <form method="post" asp-action="ConfirmReceived" asp-route-orderId="@order.OrderId">
+                                        <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                                            Đã nhận hàng & Đã thanh toán
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-action="ConfirmReceived" asp-route-orderId="@order.OrderId">
+                                        <button type="submit" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">
+                                            Đã nhận hàng
+                                        </button>
+                                    </form>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-gray-400">Không khả dụng</span>
+                            }
+                        </td>
                         <td class="border px-4 py-2">
                             <a href="@Url.Action("OrderDetails", "Orders", new { orderId = order.OrderId })" class="text-blue-500 hover:underline">Xem</a>
                         </td>
-                        <td>
-                 @if (order.OrderStatus == "Shipped" && (order.IsPaid == false)) 
-
-                    {
-                        <form method="post" asp-action="ConfirmReceived" asp-route-orderId="@order.OrderId">
-                            <button type="submit">Đã nhận hàng</button>
-                        </form>
-                    }
-                </td>
                     </tr>
                 }
             </tbody>

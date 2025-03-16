@@ -264,35 +264,41 @@ namespace DoAnWebTMDT.Controllers
         [HttpPost]
         public async Task<IActionResult> ConfirmReceived(int orderId)
         {
-            var order = await _context.Orders.FindAsync(orderId);
+            var order = await _context.Orders
+                .Include(o => o.Payments) // Đảm bảo load Payment
+                .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
             if (order == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "Không tìm thấy đơn hàng!";
+                return RedirectToAction("OrderHistory");
             }
 
-            var payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
+            var payment = order.Payments.FirstOrDefault();
+
+            // Xử lý thanh toán COD
             if (payment != null && payment.PaymentMethod == "COD")
             {
-                order.IsPaid = true;
                 payment.PaymentStatus = "Completed";
+                order.IsPaid = true;
             }
 
+            // Cập nhật trạng thái đơn hàng
             order.OrderStatus = "Completed";
+
             await _context.SaveChangesAsync();
 
-            // ✅ Kiểm tra xem có AccountId hay không
+            // ✅ Cộng điểm cho khách hàng nếu có AccountId
             if (order.AccountId.HasValue)
             {
                 Console.WriteLine($"✅ Cộng điểm cho AccountID: {order.AccountId.Value}, Tổng tiền: {order.TotalAmount}");
                 AddLoyaltyPoints(order.AccountId.Value, order.TotalAmount);
             }
-            else
-            {
-                Console.WriteLine("⚠️ Đơn hàng không có AccountId, không thể cộng điểm!");
-            }
 
+            TempData["SuccessMessage"] = "Xác nhận đơn hàng thành công!";
             return RedirectToAction("OrderHistory");
         }
+
 
 
         [HttpPost]
@@ -311,7 +317,7 @@ namespace DoAnWebTMDT.Controllers
         }
         private void AddLoyaltyPoints(int accountId, decimal orderAmount)
         {
-            int pointsEarned = (int)(orderAmount / 10000);
+            int pointsEarned = (int)(orderAmount / 1000);
             Console.WriteLine($"🚀 Cộng {pointsEarned} điểm cho AccountID: {accountId}");
 
             var loyalty = _context.LoyaltyPoints.FirstOrDefault(x => x.AccountId == accountId);

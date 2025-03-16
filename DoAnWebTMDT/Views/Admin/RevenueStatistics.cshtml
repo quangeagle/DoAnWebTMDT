@@ -1,0 +1,59 @@
+﻿@{
+    ViewData["Title"] = "Thống kê doanh thu";
+}
+
+<h2 class="text-2xl font-bold mb-4">Thống kê doanh thu</h2>
+
+<!-- 1️⃣ Hiển thị tổng doanh thu -->
+<div class="bg-blue-100 p-4 rounded-md mb-6">
+    <h3 class="text-lg font-semibold">Tổng doanh thu</h3>
+    <p class="text-xl text-blue-600 font-bold">@ViewBag.TotalRevenue</p>
+</div>
+
+<!-- 2️⃣ Hiển thị bảng doanh thu theo tháng -->
+<h3 class="text-lg font-semibold mt-6 mb-2">Doanh thu theo tháng</h3>
+<table class="table-auto w-full border-collapse border border-gray-300">
+    <thead>
+        <tr class="bg-gray-200">
+            <th class="border px-4 py-2">Tháng/Năm</th>
+            <th class="border px-4 py-2">Doanh thu</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < ViewBag.Labels.Length; i++)
+        {
+            <tr>
+                <td class="border px-4 py-2">@ViewBag.Labels[i]</td>
+                <td class="border px-4 py-2">@($"{ViewBag.RevenueData[i]:N0} đ")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- 3️⃣ Biểu đồ doanh thu -->
+<h3 class="text-lg font-semibold mt-6">Biểu đồ doanh thu</h3>
+<canvas id="revenueChart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    var ctx = document.getElementById('revenueChart').getContext('2d');
+    var revenueChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: @Html.Raw(Json.Serialize(ViewBag.Labels)),
+            datasets: [{
+                label: 'Doanh thu',
+                data: @Html.Raw(Json.Serialize(ViewBag.RevenueData)),
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
