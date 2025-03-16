@@ -1,10 +1,7 @@
 ﻿@model List<DoAnWebTMDT.Data.Order>
 
-
-
 @{
     ViewData["Title"] = "Lịch sử đơn hàng";
-   
     Layout = "_LayoutUser";
 }
 
@@ -19,6 +16,7 @@
                     <th class="border px-4 py-2">Mã đơn hàng</th>
                     <th class="border px-4 py-2">Ngày đặt</th>
                     <th class="border px-4 py-2">Tổng tiền</th>
+                    <th class="border px-4 py-2">Phương thức thanh toán</th> <!-- 🔹 Thêm cột -->
                     <th class="border px-4 py-2">Trạng thái</th>
                     <th class="border px-4 py-2">Chi tiết</th>
                 </tr>
@@ -29,16 +27,28 @@
                     <tr>
                         <td class="border px-4 py-2">@order.OrderId</td>
                         <td class="border px-4 py-2">@(order.CreatedAt?.ToString("dd/MM/yyyy") ?? "Chưa có")</td>
-
                         <td class="border px-4 py-2">@order.TotalAmount.ToString("N0") đ</td>
+                        <td class="border px-4 py-2">
+                            <!-- 🔹 Hiển thị phương thức thanh toán -->
+                            @(order.Payments?.FirstOrDefault()?.PaymentMethod ?? "Chưa có")
+                        </td>
                         <td class="border px-4 py-2">@order.OrderStatus</td>
                         <td class="border px-4 py-2">
                             <a href="@Url.Action("OrderDetails", "Orders", new { orderId = order.OrderId })" class="text-blue-500 hover:underline">Xem</a>
                         </td>
+                        <td>
+                 @if (order.OrderStatus == "Shipped" && (order.IsPaid == false)) 
+
+                    {
+                        <form method="post" asp-action="ConfirmReceived" asp-route-orderId="@order.OrderId">
+                            <button type="submit">Đã nhận hàng</button>
+                        </form>
+                    }
+                </td>
                     </tr>
                 }
             </tbody>
-        </table>    
+        </table>
     </div>
 }
 else

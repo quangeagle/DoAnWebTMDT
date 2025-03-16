@@ -39,7 +39,11 @@ public partial class Account
 
     public virtual ICollection<LikeList> LikeLists { get; set; } = new List<LikeList>();
 
+    public virtual ICollection<LoyaltyPoint> LoyaltyPoints { get; set; } = new List<LoyaltyPoint>();
+
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+
+    public virtual ICollection<RedeemHistory> RedeemHistories { get; set; } = new List<RedeemHistory>();
 
     public virtual ICollection<RedeemPoint> RedeemPoints { get; set; } = new List<RedeemPoint>();
 }

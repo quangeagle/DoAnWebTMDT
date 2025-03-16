@@ -212,9 +212,18 @@ public class ZaloPayController : ControllerBase
                 return Ok(new { return_code = 0, return_message = "Không tìm thấy đơn hàng" });
             }
 
-            order.OrderStatus = status == 1 ? "Pending" : "Completed";
+            var payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
+            if (payment == null)
+            {
+                Console.WriteLine($"⚠️ Không tìm thấy thanh toán cho đơn hàng: {orderId}");
+                return Ok(new { return_code = 0, return_message = "Không tìm thấy thanh toán" });
+            }
+
+            // Cập nhật trạng thái thanh toán
+            payment.PaymentStatus = status == 1 ? "Completed" : "Pending";
             await _context.SaveChangesAsync();
-            Console.WriteLine($"🔄 Cập nhật đơn hàng {orderId} thành {order.OrderStatus}");
+            Console.WriteLine($"🔄 Cập nhật thanh toán {payment.PaymentId} thành {payment.PaymentStatus}");
+
 
             return Ok(new { return_code = 1, return_message = "Cập nhật trạng thái đơn hàng thành công" });
         }

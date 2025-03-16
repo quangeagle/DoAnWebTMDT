@@ -25,6 +25,8 @@ public partial class Order
 
     public string? GuestAddress { get; set; }
 
+    public bool? IsPaid { get; set; }
+
     public virtual Account? Account { get; set; }
 
     public virtual Address? Address { get; set; }

@@ -48,9 +48,9 @@
         Tổng tiền: @Model.CartItems.Sum(d => d.Quantity * d.NewPrice).ToString("N0") đ
     </p>
 
-    <h3 class="text-lg font-bold mt-4">Nhập Thông Tin Giao Hàng</h3>
-
     <form asp-action="ConfirmOrder" method="post" class="mt-4">
+        <h3 class="text-lg font-bold mt-4">Nhập Thông Tin Giao Hàng</h3>
+
         @if (!isLoggedIn)
         {
             <div class="mb-2">
@@ -64,6 +64,10 @@
             <div class="mb-2">
                 <label for="Email" class="block font-medium">Email</label>
                 <input type="email" id="Email" name="GuestEmail" required class="w-full border border-gray-300 p-2" />
+            </div>
+            <div class="mb-2">
+                <label for="GuestAddress" class="block font-medium">Địa Chỉ</label>
+                <textarea id="GuestAddress" name="NewAddressDetail" required class="w-full border border-gray-300 p-2"></textarea>
             </div>
         }
         else
@@ -108,13 +112,14 @@
             </div>
         }
 
-        @if (!isLoggedIn)
-        {
-            <div class="mb-2">
-                <label for="GuestAddress" class="block font-medium">Địa Chỉ</label>
-                <textarea id="GuestAddress" name="NewAddressDetail" required class="w-full border border-gray-300 p-2"></textarea>
-            </div>
-        }
+        <h3 class="text-lg font-bold mt-4">Chọn Phương Thức Thanh Toán</h3>
+        <div class="mb-4">
+            <input type="radio" id="cod" name="PaymentMethod" value="COD" class="mr-2" checked />
+            <label for="cod">Thanh toán khi nhận hàng (COD)</label>
+            <br>
+            <input type="radio" id="bank_transfer" name="PaymentMethod" value="Bank Transfer" class="mr-2" />
+            <label for="bank_transfer">Chuyển khoản ngân hàng</label>
+        </div>
 
         <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Xác Nhận Đơn Hàng</button>
     </form>
@@ -130,14 +135,18 @@ else
         const newAddressFields = document.getElementById("newAddressFields");
         const addressRadios = document.querySelectorAll("input[name='SelectedAddressId']");
 
+        function toggleNewAddressFields() {
+            if (newAddressRadio.checked) {
+                newAddressFields.classList.remove("hidden");
+            } else {
+                newAddressFields.classList.add("hidden");
+            }
+        }
+
         addressRadios.forEach(radio => {
-            radio.addEventListener("change", function () {
-                if (newAddressRadio.checked) {
-                    newAddressFields.classList.remove("hidden");
-                } else {
-                    newAddressFields.classList.add("hidden");
-                }
-            });
+            radio.addEventListener("change", toggleNewAddressFields);
         });
+
+        toggleNewAddressFields();
     });
 </script>

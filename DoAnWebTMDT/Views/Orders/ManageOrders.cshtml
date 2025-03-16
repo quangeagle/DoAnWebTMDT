@@ -1,0 +1,63 @@
+﻿@model List<DoAnWebTMDT.Data.Order>
+
+@{
+    ViewData["Title"] = "Quản lý đơn hàng";
+  
+}
+
+<h2 class="text-2xl font-bold mb-4">Quản lý đơn hàng</h2>
+
+@if (Model != null && Model.Any())
+{
+    <div class="overflow-x-auto">
+        <table class="table-auto w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border px-4 py-2">Mã đơn hàng</th>
+                    <th class="border px-4 py-2">Ngày đặt</th>
+                    <th class="border px-4 py-2">Tổng tiền</th>
+                    <th class="border px-4 py-2">Phương thức thanh toán</th>
+                    <th class="border px-4 py-2">Trạng thái</th>
+                    <th class="border px-4 py-2">Cập nhật trạng thái</th>
+                    <th class="border px-4 py-2">Chi tiết</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+                    <tr>
+                        <td class="border px-4 py-2">@order.OrderId</td>
+                        <td class="border px-4 py-2">@(order.CreatedAt?.ToString("dd/MM/yyyy") ?? "Chưa có")</td>
+                        <td class="border px-4 py-2">@order.TotalAmount.ToString("N0") đ</td>
+                        <td class="border px-4 py-2">
+                            @(order.Payments?.FirstOrDefault()?.PaymentMethod ?? "Chưa có")
+                        </td>
+                        <td class="border px-4 py-2">@order.OrderStatus</td>
+                        <td class="border px-4 py-2">
+                            <form method="post" asp-action="UpdateOrderStatus" asp-controller="Orders">
+                                <input type="hidden" name="orderId" value="@order.OrderId" />
+                                <select name="status" class="border px-2 py-1 rounded">
+                                    <option value="Processing" selected="@(order.OrderStatus == "Processing")">Đang chuẩn bị</option>
+                                    <option value="Shipped" selected="@(order.OrderStatus == "Shipped")">Đang giao</option>
+                                    <option value="Completed" selected="@(order.OrderStatus == "Completed")">Hoàn tất</option>
+                                </select>
+                                <button type="submit" class="ml-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                                    Cập nhật
+                                </button>
+                            </form>
+                        </td>
+                        <td class="border px-4 py-2">
+                            <a href="@Url.Action("OrderDetails", "Orders", new { orderId = order.OrderId })" class="text-blue-500 hover:underline">
+                                Xem
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <p class="text-red-500">Không có đơn hàng nào.</p>
+}

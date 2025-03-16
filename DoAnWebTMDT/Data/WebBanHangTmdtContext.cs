@@ -31,6 +31,8 @@ public partial class WebBanHangTmdtContext : DbContext
 
     public virtual DbSet<LikeList> LikeLists { get; set; }
 
+    public virtual DbSet<LoyaltyPoint> LoyaltyPoints { get; set; }
+
     public virtual DbSet<Order> Orders { get; set; }
 
     public virtual DbSet<OrderDetail> OrderDetails { get; set; }
@@ -38,6 +40,8 @@ public partial class WebBanHangTmdtContext : DbContext
     public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<Product> Products { get; set; }
+
+    public virtual DbSet<RedeemHistory> RedeemHistories { get; set; }
 
     public virtual DbSet<RedeemPoint> RedeemPoints { get; set; }
 
@@ -223,6 +227,15 @@ public partial class WebBanHangTmdtContext : DbContext
                 .HasConstraintName("FK__LikeList__Produc__7B5B524B");
         });
 
+        modelBuilder.Entity<LoyaltyPoint>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__LoyaltyP__3214EC0716D757B1");
+
+            entity.HasOne(d => d.Account).WithMany(p => p.LoyaltyPoints)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK__LoyaltyPo__Accou__503BEA1C");
+        });
+
         modelBuilder.Entity<Order>(entity =>
         {
             entity.HasKey(e => e.OrderId).HasName("PK__Orders__C3905BAF265446A8");
@@ -238,6 +251,7 @@ public partial class WebBanHangTmdtContext : DbContext
             entity.Property(e => e.GuestEmail).HasMaxLength(100);
             entity.Property(e => e.GuestFullName).HasMaxLength(255);
             entity.Property(e => e.GuestPhone).HasMaxLength(15);
+            entity.Property(e => e.IsPaid).HasDefaultValue(false);
             entity.Property(e => e.OrderStatus)
                 .HasMaxLength(20)
                 .HasDefaultValue("Pending");
@@ -322,6 +336,22 @@ public partial class WebBanHangTmdtContext : DbContext
             entity.HasOne(d => d.Category).WithMany(p => p.Products)
                 .HasForeignKey(d => d.CategoryId)
                 .HasConstraintName("FK__Product__Categor__59FA5E80");
+        });
+
+        modelBuilder.Entity<RedeemHistory>(entity =>
+        {
+            entity.HasKey(e => e.RedeemId).HasName("PK__RedeemHi__C9E468D7AA9862F5");
+
+            entity.ToTable("RedeemHistory");
+
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.RedeemDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Account).WithMany(p => p.RedeemHistories)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK__RedeemHis__Accou__540C7B00");
         });
 
         modelBuilder.Entity<RedeemPoint>(entity =>

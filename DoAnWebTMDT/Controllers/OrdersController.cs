@@ -87,7 +87,7 @@ namespace DoAnWebTMDT.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ConfirmOrder(int? selectedAddressId, string? newFullName, string? newPhone, string? newAddressDetail, string fullName, string phoneNumber, string email)
+        public async Task<IActionResult> ConfirmOrder(int? selectedAddressId, string? newFullName, string? newPhone, string? newAddressDetail, string fullName, string phoneNumber, string email, string paymentMethod)
         {
             int? userId = GetCurrentUserId();
             List<CartItemViewModel> cartItems;
@@ -113,18 +113,11 @@ namespace DoAnWebTMDT.Controllers
                     : new List<CartItemViewModel>();
             }
 
-          /*  if (!cartItems.Any())
-            {
-                TempData["ErrorMessage"] = "Giỏ hàng của bạn đang trống.";
-                return RedirectToAction("Checkout");
-            }*/
-
             int? addressId = selectedAddressId;
             string finalAddress = newAddressDetail;
 
             if (userId.HasValue)
             {
-                // Nếu chọn địa chỉ có sẵn
                 if (selectedAddressId.HasValue)
                 {
                     var selectedAddress = await _context.Addresses
@@ -138,7 +131,6 @@ namespace DoAnWebTMDT.Controllers
                 }
                 else if (!string.IsNullOrEmpty(newAddressDetail) && !string.IsNullOrEmpty(newFullName) && !string.IsNullOrEmpty(newPhone))
                 {
-                    // Nếu nhập địa chỉ mới, lưu vào database
                     var newAddress = new Address
                     {
                         AccountId = userId.Value,
@@ -150,7 +142,7 @@ namespace DoAnWebTMDT.Controllers
                     _context.Addresses.Add(newAddress);
                     await _context.SaveChangesAsync();
 
-                    addressId = newAddress.AddressId; // Cập nhật AddressId để sử dụng
+                    addressId = newAddress.AddressId;
                     finalAddress = newAddress.AddressDetail;
                 }
             }
@@ -166,7 +158,7 @@ namespace DoAnWebTMDT.Controllers
                 GuestEmail = userId == null ? email : null,
                 GuestAddress = userId == null ? finalAddress : null,
                 TotalAmount = totalAmount,
-                OrderStatus = "Pending",
+                OrderStatus = "Pending", // Mặc định Pending
                 CreatedAt = DateTime.Now
             };
 
@@ -184,6 +176,25 @@ namespace DoAnWebTMDT.Controllers
             _context.OrderDetails.AddRange(orderDetails);
             await _context.SaveChangesAsync();
 
+            // Lưu thông tin thanh toán vào bảng Payment
+            var payment = new Payment
+            {
+                OrderId = order.OrderId,
+                PaymentMethod = paymentMethod,
+                PaymentStatus = paymentMethod == "COD" ? "Completed" : "Pending",
+                TransactionDate = DateTime.Now
+            };
+
+            _context.Payments.Add(payment);
+            await _context.SaveChangesAsync();
+
+            // Nếu là COD, cập nhật đơn hàng thành công luôn
+            if (paymentMethod == "COD")
+            {
+                order.OrderStatus = "Pending";
+                await _context.SaveChangesAsync();
+            }
+
             if (userId.HasValue)
             {
                 _context.GioHangs.RemoveRange(_context.GioHangs.Where(g => g.AccountId == userId));
@@ -195,8 +206,16 @@ namespace DoAnWebTMDT.Controllers
 
             await _context.SaveChangesAsync();
 
+            // Nếu là COD, chuyển đến trang thành công
+            if (paymentMethod == "COD")
+            {
+                return RedirectToAction("OrderSuccess"); // Chuyển đến trang xác nhận thành công
+            }
+
+            // Nếu là chuyển khoản, tiếp tục tới ZaloPay
             return RedirectToAction("CreatePayment", "ZaloPay", new { orderId = order.OrderId, amount = order.TotalAmount });
         }
+
 
         public async Task<IActionResult> OrderHistory()
         {
@@ -207,15 +226,22 @@ namespace DoAnWebTMDT.Controllers
             }
 
             var orders = await _context.Orders
-                .Where(o => o.AccountId == userId)
-                .Include(o => o.OrderDetails)
-                .ThenInclude(od => od.Product)
-                .OrderByDescending(o => o.CreatedAt)
-                .ToListAsync();  // ✅ Luôn lấy danh sách (List<Order>)
+             .Where(o => o.AccountId == userId)
+             .Include(o => o.OrderDetails)
+                 .ThenInclude(od => od.Product)
+             .Include(o => o.Payments) // 🔹 Thêm để lấy phương thức thanh toán
+             .OrderByDescending(o => o.CreatedAt)
+             .ToListAsync();
+
 
             return View(orders);
         }
 
+        public IActionResult OrderSuccess(int orderId)
+        {
+            ViewData["OrderId"] = orderId;
+            return View();
+        }
 
         [HttpPost]
         public async Task<IActionResult> GuestOrderLookup(string phoneNumber)
@@ -234,6 +260,50 @@ namespace DoAnWebTMDT.Controllers
             }
 
             return View("OrderHistory", orders);
+        }
+        [HttpPost]
+        public async Task<IActionResult> ConfirmReceived(int orderId)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+           
+            var payment = await _context.Payments.FirstOrDefaultAsync(p => p.OrderId == orderId);
+            if (payment != null && payment.PaymentMethod == "COD")
+            {
+                order.IsPaid = true;
+                payment.PaymentStatus = "Completed";
+            }
+
+            order.OrderStatus = "Completed"; 
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("OrderHistory");
+        }
+        [HttpPost]
+        public async Task<IActionResult> UpdateOrderStatus(int orderId, string status)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null)
+            {
+                return NotFound();
+            }
+
+            order.OrderStatus = status;
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("ManageOrders");
+        }
+
+        public IActionResult ManageOrders()
+        {
+            var orders = _context.Orders
+                  .Include(o => o.Payments) // Nếu có PaymentMethod
+                  .ToList();
+            return View(orders);
         }
 
     }
